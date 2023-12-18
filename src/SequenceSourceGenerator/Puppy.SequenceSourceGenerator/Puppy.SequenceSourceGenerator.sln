@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Puppy.SequenceSourceGenerator", "Puppy.SequenceSourceGenerator\Puppy.SequenceSourceGenerator.csproj", "{0DA24146-49D3-42DA-A163-AAF75C9BE874}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Puppy.SequenceSourceGenerator.Tests", "Puppy.SequenceSourceGenerator.Tests\Puppy.SequenceSourceGenerator.Tests.csproj", "{97542CFD-52A1-4DA9-A1FA-B1667001908B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{0DA24146-49D3-42DA-A163-AAF75C9BE874}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0DA24146-49D3-42DA-A163-AAF75C9BE874}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0DA24146-49D3-42DA-A163-AAF75C9BE874}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0DA24146-49D3-42DA-A163-AAF75C9BE874}.Release|Any CPU.Build.0 = Release|Any CPU
+		{97542CFD-52A1-4DA9-A1FA-B1667001908B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{97542CFD-52A1-4DA9-A1FA-B1667001908B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{97542CFD-52A1-4DA9-A1FA-B1667001908B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{97542CFD-52A1-4DA9-A1FA-B1667001908B}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

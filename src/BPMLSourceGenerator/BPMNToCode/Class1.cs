@@ -62,7 +62,11 @@ public class BpmnParser
 
     private void ParseProcess(XElement element)
     {
-        Console.WriteLine($"Parsed process with id {element.Attribute("id")?.Value}");
+    string id = element.Attribute("id")?.Value;
+    string name = element.Attribute("name")?.Value;
+    string isExecutable = element.Attribute("isExecutable")?.Value;
+
+    Console.WriteLine($"Parsed process with id {id}, name {name}, isExecutable {isExecutable}");
     }
 
     private void ParseStartEvent(XElement element)
