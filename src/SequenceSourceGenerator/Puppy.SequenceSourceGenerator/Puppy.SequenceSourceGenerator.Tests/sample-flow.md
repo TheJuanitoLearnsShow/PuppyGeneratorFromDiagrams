@@ -1,9 +1,8 @@
 ﻿
-
 ```mermaid
 sequenceDiagram
-    participant Alice
-    participant Bob
-    Alice->>Bob: Hi Bob
-    Bob->>Alice: Hi Alice
+    participant a as Alice the great:IAlice
+    participant b as Bob: IB ob
+    a->>b: Hi Bob
+    b->>a: Hi Alice
 ```

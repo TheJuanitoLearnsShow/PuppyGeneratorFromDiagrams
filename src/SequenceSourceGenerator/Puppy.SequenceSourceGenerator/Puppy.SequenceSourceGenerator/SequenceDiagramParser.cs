@@ -1,4 +1,5 @@
 ﻿using System.Text.RegularExpressions;
+using CaseExtensions;
 
 namespace Puppy.SequenceSourceGenerator;
 
@@ -43,7 +44,20 @@ public partial class SequenceDiagramParser
                         if (participantMatch.Success)
                         {
                             var participantName = participantMatch.Groups[1].Value;
-                            Participants[participantName] = new SequenceParticipant( participantName);
+                            var participantParts = line.Split(" as ");
+                            if (participantParts.Length == 1)
+                            {
+                                Participants[participantName] = new SequenceParticipant(participantName, participantName, participantName.ToPascalCase());
+                            }
+                            else
+                            {
+                                var aliasParts = participantParts.Last().Split(":");
+                                
+                                var alias = aliasParts.First().Trim();
+                                var type = (aliasParts.LastOrDefault()?.Trim() ?? string.Empty).ToPascalCase();
+                                Participants[participantName] = new SequenceParticipant(participantName, 
+                                    alias, type);
+                            }
                         }
                         break;
                     case State.Message:
@@ -66,6 +80,6 @@ public partial class SequenceDiagramParser
 
     [GeneratedRegex(@"(\w+)->>(\w+): (.*)")]
     private static partial Regex MessageRegex();
-    [GeneratedRegex(@"participant (\w+)")]
+    [GeneratedRegex(@"participant (\w+)(?: as (\w+))?")]
     private static partial Regex ParticipantRegex();
 }

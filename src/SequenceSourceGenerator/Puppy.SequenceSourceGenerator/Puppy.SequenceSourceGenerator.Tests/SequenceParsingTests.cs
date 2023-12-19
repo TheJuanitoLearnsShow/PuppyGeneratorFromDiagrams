@@ -12,6 +12,7 @@ public class SequenceParsingTests
         var parser = new SequenceDiagramParser();
         parser.Parse(string.Join(Environment.NewLine, mermaidDiagram));
         Assert.Equal(2, parser.Participants.Count);
+        Assert.Equal("IAlice", parser.Participants.First().Value.Type);
         Assert.NotEmpty(parser.Messages);
     }
 }
