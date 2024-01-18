@@ -3,6 +3,7 @@ using CaseExtensions;
 
 namespace Puppy.SequenceSourceGenerator;
 
+public record ParsedDiagram(Dictionary<string, SequenceParticipant> Participants, List<SequenceMessage> Messages);
 public partial class SequenceDiagramParser
     {
         private enum State
@@ -12,17 +13,17 @@ public partial class SequenceDiagramParser
             Message
         }
 
-        public Dictionary<string, SequenceParticipant> Participants { get; private set; }
-        public List<SequenceMessage> Messages { get; private set; }
+        
 
         public SequenceDiagramParser()
         {
-            Participants = new Dictionary<string, SequenceParticipant>();
-            Messages = new List<SequenceMessage>();
         }
 
-        public void Parse(string input)
+        public ParsedDiagram Parse(string input)
         {
+            var participants = new Dictionary<string, SequenceParticipant>();
+            var messages = new List<SequenceMessage>();
+
             var lines = input.Split('\n');
             var state = State.None;
 
@@ -47,7 +48,7 @@ public partial class SequenceDiagramParser
                             var participantParts = line.Split(" as ");
                             if (participantParts.Length == 1)
                             {
-                                Participants[participantName] = new SequenceParticipant(participantName, participantName, participantName.ToPascalCase());
+                                participants[participantName] = new SequenceParticipant(participantName, participantName, participantName.ToPascalCase());
                             }
                             else
                             {
@@ -55,7 +56,7 @@ public partial class SequenceDiagramParser
                                 
                                 var alias = aliasParts.First().Trim();
                                 var type = (aliasParts.LastOrDefault()?.Trim() ?? string.Empty).ToPascalCase();
-                                Participants[participantName] = new SequenceParticipant(participantName, 
+                                participants[participantName] = new SequenceParticipant(participantName, 
                                     alias, type);
                             }
                         }
@@ -67,7 +68,8 @@ public partial class SequenceDiagramParser
                             var from = messageMatch.Groups[1].Value;
                             var to = messageMatch.Groups[2].Value;
                             var message = messageMatch.Groups[3].Value;
-                            Messages.Add(new SequenceMessage(from, to, message));
+                        participants[to].AddMessage(message);
+                            messages.Add(new SequenceMessage(from, to, message));
                         }
                         break;
                     case State.None:
@@ -76,6 +78,7 @@ public partial class SequenceDiagramParser
                         throw new ArgumentOutOfRangeException();
                 }
             }
+        return new ParsedDiagram(participants, messages);
         }
 
     [GeneratedRegex(@"(\w+)->>(\w+): (.*)")]
