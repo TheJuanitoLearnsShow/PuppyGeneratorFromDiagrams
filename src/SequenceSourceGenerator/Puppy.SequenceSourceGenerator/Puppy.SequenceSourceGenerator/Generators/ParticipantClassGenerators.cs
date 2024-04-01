@@ -72,10 +72,11 @@ public interface {participantInterfaceName}
 
         public IEnumerable<(string InterfaceName, string Contents)> GenerateCode(ParsedDiagram diagram)
         {
-            
-            var classes = diagram.Participants.SelectMany(kv => GenerateCodeForParticipant(kv.Value));
-            return classes.Append(GenerateCodeForOrchestrator(diagram.Participants.ToList()));
+            var participants = diagram.Participants.Select(p => p.Value).ToList();
+            var classes = participants.SelectMany(GenerateCodeForParticipant);
+            return classes.Append(GenerateCodeForOrchestrator(participants));
         }
+        
         IEnumerable<(string ClassName, string Contents)> GenerateClassesForMessage(SynchronousMessage msg)
         {
             yield return ($"{msg.ResponseName}Response", GenerateMessagePayloadClass($"{msg.ResponseName}Response"));

@@ -53,7 +53,8 @@ public partial class SequenceDiagramParser
                             var participantParts = line.Split(" as ");
                             if (participantParts.Length == 1)
                             {
-                                participants[participantName] = new SequenceParticipant(participantName, participantName, participantName.ToPascalCase());
+                                participants[participantName] = new SequenceParticipant(participantName, 
+                                    participantName, participantName.ToPascalCase());
                             }
                             else
                             {
@@ -61,8 +62,8 @@ public partial class SequenceDiagramParser
                                 
                                 var alias = aliasParts.First().Trim();
                                 var type = (aliasParts.LastOrDefault()?.Trim() ?? string.Empty).ToPascalCase();
-                                participants[participantName] = new SequenceParticipant(participantName, 
-                                    alias, type);
+                                participants[participantName] = new SequenceParticipant(
+                                    alias, participantName, type);
                             }
                         }
                         break;

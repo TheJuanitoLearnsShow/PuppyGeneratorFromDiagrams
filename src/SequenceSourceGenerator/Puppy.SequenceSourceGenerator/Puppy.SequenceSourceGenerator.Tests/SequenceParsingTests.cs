@@ -49,7 +49,7 @@ public class SequenceParsingTests
             File.WriteAllText( Path.Combine(folderName, f.InterfaceName + ".cs"), f.Contents);
         }
         _testOutputHelper.WriteLine(filesGenerated.ToString());
-        Assert.Equal(13, filesGenerated.Count());
+        Assert.Equal(14, filesGenerated.Count());
 
     }
     //
