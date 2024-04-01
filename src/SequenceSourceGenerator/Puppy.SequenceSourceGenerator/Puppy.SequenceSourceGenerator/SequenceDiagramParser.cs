@@ -73,7 +73,7 @@ public partial class SequenceDiagramParser
                             var from = messageMatch.Groups[1].Value;
                             var to = messageMatch.Groups[2].Value;
                             var message = messageMatch.Groups[3].Value;
-                            var msg = new SynchronousMessage(message);
+                            var msg = new SynchronousMessage(message, from, to);
                             participants[from].AddCallMade(msg);
                             participants[to].AddMessage(msg);
                             messages.Add(new SequenceMessage(from, to, message));

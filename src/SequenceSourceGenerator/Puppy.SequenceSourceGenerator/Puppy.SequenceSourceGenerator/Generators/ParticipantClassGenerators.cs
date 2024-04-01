@@ -17,6 +17,36 @@ namespace Puppy.SequenceSourceGenerator.Generators
             _nameSpace = nameSpace;
         }
 
+        private (string ClassName, string Contents) GenerateCodeForOrchestrator(IEnumerable<SequenceParticipant> participants)
+        {
+            var participant = participants
+                .FirstOrDefault(p =>
+                    p.ParticipantName.Equals("Orchestrator", StringComparison.InvariantCultureIgnoreCase));
+            if (participant == null) return (string.Empty, string.Empty);
+            var participantInterfaceName = participant.Type.ToPascalCase() + "Impl";
+            var fieldsToCalledParticipants = participant.GetParticipantsCalled().Select(pn =>
+                {
+                    var pcalled = participants.FirstOrDefault(p => p.Alias == pn);
+                    return pcalled;
+                }
+            ).Where(p => p != null)
+            .Select(p => $"\nprivate readonly {p.Type} {p.Alias};")
+            .ToList();
+            var mainClass = $"""
+                                 namespace {_nameSpace};
+                                 using System.Collections.Generic;
+
+                                 public partial class {participantInterfaceName}
+                                 """
+                                +
+                                "\n{\n" +
+                                fieldsToCalledParticipants
+                                +
+                                "\n}\n";
+            var payloadClasses = participant.GetMessages().SelectMany(GenerateClassesForMessage);
+            return (participantInterfaceName, mainClass);
+        }
+        
         private IEnumerable<(string ClassName, string Contents)> GenerateCodeForParticipant(SequenceParticipant participant)
         {
             var participantInterfaceName = participant.Type.ToPascalCase();
@@ -42,8 +72,9 @@ public interface {participantInterfaceName}
 
         public IEnumerable<(string InterfaceName, string Contents)> GenerateCode(ParsedDiagram diagram)
         {
+            
             var classes = diagram.Participants.SelectMany(kv => GenerateCodeForParticipant(kv.Value));
-            return classes;
+            return classes.Append(GenerateCodeForOrchestrator(diagram.Participants.ToList()));
         }
         IEnumerable<(string ClassName, string Contents)> GenerateClassesForMessage(SynchronousMessage msg)
         {
