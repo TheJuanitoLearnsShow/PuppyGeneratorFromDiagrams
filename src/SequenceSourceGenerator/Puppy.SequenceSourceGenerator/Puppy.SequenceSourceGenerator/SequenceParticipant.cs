@@ -4,11 +4,21 @@ namespace Puppy.SequenceSourceGenerator;
 
 public record SequenceParticipant(string ParticipantName, string Alias, string Type)
 {
-    private List<string> _messages = [];
-    public void AddMessage(string message)
+    private List<SynchronousMessage> _messagesReceived = [];
+    private List<SynchronousMessage> _messagesSent = [];
+    public void AddMessage(SynchronousMessage message)
     {
-        _messages.Add(message.Trim().ToPascalCase());
+        _messagesReceived.Add(message);
+    }
+    public void SetResponseToLastSyncMessageSent(string responseName)
+    {
+        _messagesSent.LastOrDefault()?.SetResponseName(responseName);
     }
 
-    public IReadOnlyList<string> GetMessages() => _messages;
+    public void AddCallMade(SynchronousMessage message)
+    {
+        _messagesSent.Add(message);
+    }
+    
+    public IReadOnlyList<SynchronousMessage> GetMessages() => _messagesReceived;
 }

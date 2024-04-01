@@ -1,8 +1,16 @@
 ﻿
 ```mermaid
 sequenceDiagram
+    participant api as External Caller:IExternalCaller
+    participant o as Flow Orchestrator:IOrchestrator
     participant a as Alice the great:IAlice
     participant b as Bob: IB ob
-    a->>b: Hi Bob
-    b->>a: Hi Alice
+    participant t as Third Party Service: IStats
+    api->>o:Initiate Flow
+    o->>b: Hi Bob
+    b-->>o: Greeting
+    o->>a: Hi Alice
+    a->>t: Get Newest Stats
+    t-->>a: Newest Stats
+    a-->>o: Greeting
 ```

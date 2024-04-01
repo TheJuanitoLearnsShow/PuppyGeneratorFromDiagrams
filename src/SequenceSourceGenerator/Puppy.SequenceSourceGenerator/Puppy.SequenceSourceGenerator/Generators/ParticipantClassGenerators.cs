@@ -35,9 +35,9 @@ public interface {participantInterfaceName}
             return payloadClasses.Append((participantInterfaceName, mainInterface));
         }
 
-        private string GenerateMethodDeclarationForMessage(string messageName)
+        private string GenerateMethodDeclarationForMessage(SynchronousMessage msg)
         {
-            return $"{messageName}Response {messageName}({messageName}Request request);";
+            return $"{msg.ResponseName}Response {msg.MessageName}({msg.MessageName}Request request);";
         }
 
         public IEnumerable<(string InterfaceName, string Contents)> GenerateCode(ParsedDiagram diagram)
@@ -45,10 +45,10 @@ public interface {participantInterfaceName}
             var classes = diagram.Participants.SelectMany(kv => GenerateCodeForParticipant(kv.Value));
             return classes;
         }
-        IEnumerable<(string ClassName, string Contents)> GenerateClassesForMessage(string messageName)
+        IEnumerable<(string ClassName, string Contents)> GenerateClassesForMessage(SynchronousMessage msg)
         {
-            yield return ($"{messageName}Response", GenerateMessagePayloadClass($"{messageName}Response"));
-            yield return ($"{messageName}Request", GenerateMessagePayloadClass($"{messageName}Request"));
+            yield return ($"{msg.ResponseName}Response", GenerateMessagePayloadClass($"{msg.ResponseName}Response"));
+            yield return ($"{msg.MessageName}Request", GenerateMessagePayloadClass($"{msg.MessageName}Request"));
         }
 
         private string GenerateMessagePayloadClass(string className)

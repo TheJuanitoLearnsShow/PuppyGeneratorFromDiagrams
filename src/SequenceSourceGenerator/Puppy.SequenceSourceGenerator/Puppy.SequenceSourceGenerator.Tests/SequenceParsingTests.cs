@@ -1,9 +1,17 @@
 using Puppy.SequenceSourceGenerator.Generators;
+using Xunit.Abstractions;
 
 namespace Puppy.SequenceSourceGenerator.Tests;
 
 public class SequenceParsingTests
 {
+    private readonly ITestOutputHelper _testOutputHelper;
+
+    public SequenceParsingTests(ITestOutputHelper testOutputHelper)
+    {
+        _testOutputHelper = testOutputHelper;
+    }
+
     [Fact]
     public void TestParse()
     {
@@ -29,14 +37,19 @@ public class SequenceParsingTests
         var result = parser.Parse(string.Join(Environment.NewLine, mermaidDiagram));
 
         var generator = new ParticipantClassGenerators("testGen");
-        var filesGenerated = generator.GenerateCode(result);
+        var filesGenerated = generator.GenerateCode(result).ToList();
 
+        var folderName = "generated";
+        if (!Directory.Exists(folderName))
+        {
+            Directory.CreateDirectory(folderName);
+        }
         foreach(var f in filesGenerated)
         {
-            File.WriteAllText(f.InterfaceName + ".cs", f.Contents);
+            File.WriteAllText( Path.Combine(folderName, f.InterfaceName + ".cs"), f.Contents);
         }
-        Console.WriteLine(filesGenerated);
-        Assert.Equal(6, filesGenerated.Count());
+        _testOutputHelper.WriteLine(filesGenerated.ToString());
+        Assert.Equal(11, filesGenerated.Count());
 
     }
     //

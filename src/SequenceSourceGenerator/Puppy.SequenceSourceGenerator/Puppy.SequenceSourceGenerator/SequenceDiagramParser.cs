@@ -10,7 +10,8 @@ public partial class SequenceDiagramParser
         {
             None,
             Participant,
-            Message
+            Message,
+            MessageReply
         }
 
         
@@ -32,6 +33,10 @@ public partial class SequenceDiagramParser
                 if (line.Trim().StartsWith("participant"))
                 {
                     state = State.Participant;
+                }
+                else if (line.Contains("-->>")) // more specific than ->>
+                {
+                    state = State.MessageReply;
                 }
                 else if (line.Contains("->>"))
                 {
@@ -68,9 +73,17 @@ public partial class SequenceDiagramParser
                             var from = messageMatch.Groups[1].Value;
                             var to = messageMatch.Groups[2].Value;
                             var message = messageMatch.Groups[3].Value;
-                        participants[to].AddMessage(message);
+                            var msg = new SynchronousMessage(message);
+                            participants[from].AddCallMade(msg);
+                            participants[to].AddMessage(msg);
                             messages.Add(new SequenceMessage(from, to, message));
                         }
+                        break;
+                    case State.MessageReply:
+                        var messageReplyMatch = ReplyMessageRegex().Match(line);
+                        var toReply = messageReplyMatch.Groups[2].Value;
+                        var messageReply = messageReplyMatch.Groups[3].Value;
+                        participants[toReply].SetResponseToLastSyncMessageSent( messageReply);
                         break;
                     case State.None:
                         break;
@@ -83,6 +96,9 @@ public partial class SequenceDiagramParser
 
     [GeneratedRegex(@"(\w+)->>(\w+): (.*)")]
     private static partial Regex MessageRegex();
+    
+    [GeneratedRegex(@"(\w+)-->>(\w+): (.*)")]
+    private static partial Regex ReplyMessageRegex();
     [GeneratedRegex(@"participant (\w+)(?: as (\w+))?")]
     private static partial Regex ParticipantRegex();
 }
