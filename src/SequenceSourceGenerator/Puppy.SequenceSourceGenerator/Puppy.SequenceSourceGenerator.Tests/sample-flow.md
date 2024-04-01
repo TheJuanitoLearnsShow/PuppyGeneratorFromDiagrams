@@ -6,7 +6,7 @@ sequenceDiagram
     participant a as Alice the great:IAlice
     participant b as Bob: IB ob
     participant t as Third Party Service: IStats
-    api->>o:Initiate Flow
+    api->>o: Initiate Flow
     o->>b: Hi Bob
     b-->>o: Greeting
     o->>a: Hi Alice
