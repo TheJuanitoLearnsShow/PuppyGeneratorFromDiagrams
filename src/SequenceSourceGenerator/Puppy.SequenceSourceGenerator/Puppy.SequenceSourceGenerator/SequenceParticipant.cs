@@ -23,6 +23,9 @@ public record SequenceParticipant(string ParticipantName, string Alias, string T
     }
     
     public IReadOnlyList<SynchronousMessage> GetMessages() => _messagesReceived;
+    
+    public IReadOnlyList<SynchronousMessage> GetMessagesSent() => _messagesSent;
+    
     public IReadOnlyList<string> GetParticipantsCalled() => 
         _messagesSent.Select(m => m.To).Distinct().ToImmutableList();
 }

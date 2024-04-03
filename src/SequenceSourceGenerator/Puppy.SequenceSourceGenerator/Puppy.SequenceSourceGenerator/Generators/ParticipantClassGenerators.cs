@@ -1,6 +1,7 @@
 ﻿using CaseExtensions;
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -17,14 +18,14 @@ namespace Puppy.SequenceSourceGenerator.Generators
             _nameSpace = nameSpace;
         }
 
-        private (string ClassName, string Contents) GenerateCodeForOrchestrator(IEnumerable<SequenceParticipant> participants)
+        private (string ClassName, string Contents) GenerateCodeForOrchestrator(IReadOnlyCollection<SequenceParticipant> participants)
         {
-            var participant = participants
+            var orchestrator = participants
                 .FirstOrDefault(p =>
-                    p.ParticipantName.Equals("Orchestrator", StringComparison.InvariantCultureIgnoreCase));
-            if (participant == null) return (string.Empty, string.Empty);
-            var participantInterfaceName = participant.Type.ToPascalCase() + "Impl";
-            var fieldsToCalledParticipants = participant.GetParticipantsCalled().Select(pn =>
+                    p.Type.Equals("IOrchestrator", StringComparison.InvariantCultureIgnoreCase));
+            if (orchestrator == null) return (string.Empty, string.Empty);
+            var participantInterfaceName = orchestrator.ParticipantName.ToPascalCase() + "Base";
+            var fieldsToCalledParticipants = orchestrator.GetParticipantsCalled().Select(pn =>
                 {
                     var pcalled = participants.FirstOrDefault(p => p.Alias == pn);
                     return pcalled;
@@ -32,21 +33,36 @@ namespace Puppy.SequenceSourceGenerator.Generators
             ).Where(p => p != null)
             .Select(p => $"\nprivate readonly {p.Type} {p.Alias};")
             .ToList();
+            var flowFunction = orchestrator.GetMessagesSent()
+                .Select(GenerateStepCode)
+                .ToImmutableList();
             var mainClass = $"""
                                  namespace {_nameSpace};
                                  using System.Collections.Generic;
 
                                  public partial class {participantInterfaceName}
                                  """
-                                +
-                                "\n{\n" +
-                                fieldsToCalledParticipants
-                                +
-                                "\n}\n";
-            var payloadClasses = participant.GetMessages().SelectMany(GenerateClassesForMessage);
+                                + "\n{\n" 
+                                + string.Join("\n", fieldsToCalledParticipants)
+                                + "\npublic async Task ExecuteFlow() {\n"
+                                + string.Join("\n", flowFunction)
+                                + "\n}"
+                                + "\n}\n";
+            var payloadClasses = orchestrator.GetMessages().SelectMany(GenerateClassesForMessage);
             return (participantInterfaceName, mainClass);
         }
-        
+
+        private string GenerateStepCode(SynchronousMessage msg, int stepIdx)
+        {
+            var resultStorageCode = string.IsNullOrEmpty(msg.ResultAssignmentCode) ?
+                $"\nvar step{stepIdx + 1} = "
+                : $"\nvar {msg.ResultAssignmentCode} = ";
+            var callingMethodCode = string.IsNullOrEmpty(msg.ParametersCode)
+                ? $"{msg.To}.{msg.MessageName}();"
+                : $"{msg.To}.{msg.MessageName}({msg.ParametersCode});";
+            return resultStorageCode + callingMethodCode;
+        }
+
         private IEnumerable<(string ClassName, string Contents)> GenerateCodeForParticipant(SequenceParticipant participant)
         {
             var participantInterfaceName = participant.Type.ToPascalCase();

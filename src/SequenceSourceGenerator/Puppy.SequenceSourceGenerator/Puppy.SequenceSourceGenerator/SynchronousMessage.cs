@@ -12,18 +12,43 @@ namespace Puppy.SequenceSourceGenerator
         private readonly string _to;
         public string MessageName { get; }
         public string ResponseName { set; get; }
+        public string ParametersCode { private set; get; }
+        public string ResultAssignmentCode { private set; get; }
 
         public SynchronousMessage(string messageName, string from, string to)
         {
             _from = from.Trim();
             _to = to.Trim();
-            MessageName = messageName.Trim().ToPascalCase();
+            var lastParenthesis = messageName.LastIndexOf('(');
+            if (lastParenthesis >= 0)
+            {
+                var paramsPart = messageName[(lastParenthesis + 1)..].Trim().TrimEnd(')');
+                ParametersCode = paramsPart;
+                MessageName = messageName[..lastParenthesis].Trim().ToPascalCase();
+            }
+            else
+            {
+                ParametersCode = string.Empty;
+                MessageName = messageName.Trim().ToPascalCase();
+            }
             ResponseName = MessageName;
+            ResultAssignmentCode = string.Empty;
         }
 
         internal void SetResponseName(string responseName)
         {
-            ResponseName = responseName.Trim().ToPascalCase();
+            var lastParenthesis = responseName.LastIndexOf('(');
+            if (lastParenthesis >= 0)
+            {
+                var paramsPart = responseName[(lastParenthesis + 1)..].Trim().TrimEnd(')');
+                ResultAssignmentCode = paramsPart;
+            }
+            else
+            {
+                ResultAssignmentCode = string.Empty;
+                ResponseName = responseName.Trim().ToPascalCase();
+            }
+
         }
     }
 }

@@ -8,8 +8,8 @@ sequenceDiagram
     participant t as Third Party Service: IStats
     api->>o: Initiate Flow
     o->>b: Hi Bob
-    b-->>o: Greeting
-    o->>a: Hi Alice
+    b-->>o: Greeting (greetingResult)
+    o->>a: Hi Alice (greetingResult)
     a->>t: Get Newest Stats
     t-->>a: Newest Stats
     a-->>o: Greeting
