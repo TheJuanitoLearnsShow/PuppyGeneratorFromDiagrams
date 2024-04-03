@@ -28,4 +28,13 @@ public record SequenceParticipant(string ParticipantName, string Alias, string T
     
     public IReadOnlyList<string> GetParticipantsCalled() => 
         _messagesSent.Select(m => m.To).Distinct().ToImmutableList();
+
+    public string GetVarDeclarationFor(string varName)
+    {
+        var msgThatGeneratedVar = 
+            _messagesSent
+                .FirstOrDefault(m => m.ResultAssignmentCode == varName)
+                ?.ResponseType ?? "object";
+        return $"{msgThatGeneratedVar} {varName}";
+    }
 }

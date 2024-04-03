@@ -63,7 +63,8 @@ namespace Puppy.SequenceSourceGenerator.Generators
             return resultStorageCode + callingMethodCode;
         }
 
-        private IEnumerable<(string ClassName, string Contents)> GenerateCodeForParticipant(SequenceParticipant participant)
+        private IEnumerable<(string ClassName, string Contents)> GenerateCodeForParticipant(
+            SequenceParticipant participant, IReadOnlyCollection<SequenceParticipant> participants)
         {
             var participantInterfaceName = participant.Type.ToPascalCase();
             var mainInterface = $"""
@@ -74,29 +75,43 @@ public interface {participantInterfaceName}
 """
 +
 "\n{\n" +
-    string.Join("\n\n",  participant.GetMessages().Select(GenerateMethodDeclarationForMessage))
+    string.Join("\n\n",  participant.GetMessages().Select(m =>
+    {
+        var caller = participants.FirstOrDefault(p => p.Alias == m.From);
+        return GenerateMethodDeclarationForMessage(m,caller);
+    }))
 +
 "\n}\n";
             var payloadClasses = participant.GetMessages().SelectMany(GenerateClassesForMessage);
             return payloadClasses.Append((participantInterfaceName, mainInterface));
         }
 
-        private string GenerateMethodDeclarationForMessage(SynchronousMessage msg)
+        private string GenerateMethodDeclarationForMessage(SynchronousMessage msg, SequenceParticipant? caller)
         {
-            return $"{msg.ResponseName}Response {msg.MessageName}({msg.MessageName}Request request);";
+            if (caller == null || string.IsNullOrEmpty(msg.ParametersCode))
+            {
+                return $"{msg.ResponseType} {msg.MessageName}({msg.MessageName}Request request);";
+            }
+
+            var paramsForMethod = 
+                msg.ParametersCode
+                    .Split(',')
+                    .Select(p => caller.GetVarDeclarationFor(p.Trim()))
+                    .ToArray();
+            return $"{msg.ResponseType} {msg.MessageName}({string.Join(',', paramsForMethod) });";
         }
 
         public IEnumerable<(string InterfaceName, string Contents)> GenerateCode(ParsedDiagram diagram)
         {
             var participants = diagram.Participants.Select(p => p.Value).ToList();
-            var classes = participants.SelectMany(GenerateCodeForParticipant);
+            var classes = participants.SelectMany(p => GenerateCodeForParticipant(p, participants));
             return classes.Append(GenerateCodeForOrchestrator(participants));
         }
         
         IEnumerable<(string ClassName, string Contents)> GenerateClassesForMessage(SynchronousMessage msg)
         {
-            yield return ($"{msg.ResponseName}Response", GenerateMessagePayloadClass($"{msg.ResponseName}Response"));
-            yield return ($"{msg.MessageName}Request", GenerateMessagePayloadClass($"{msg.MessageName}Request"));
+            yield return ($"{msg.ResponseType}", GenerateMessagePayloadClass($"{msg.ResponseType}"));
+            yield return ($"{msg.RequestType}", GenerateMessagePayloadClass($"{msg.RequestType}"));
         }
 
         private string GenerateMessagePayloadClass(string className)
