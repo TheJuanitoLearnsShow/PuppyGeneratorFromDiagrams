@@ -3,11 +3,15 @@ using CaseExtensions;
 
 namespace Puppy.SequenceSourceGenerator;
 
-public record SequenceParticipant(string ParticipantName, string Alias, string Type)
+public class SequenceParticipant(string participantName, string alias, string type)
 {
     private List<string> _participantsCalled = [];
     private List<SynchronousMessage> _messagesReceived = [];
     private List<SynchronousMessage> _messagesSent = [];
+    public string ParticipantName { get; } = participantName;
+    public string Alias { get; } = alias;
+    public string Type { get; } = type;
+
     public void AddMessage(SynchronousMessage message)
     {
         _messagesReceived.Add(message);
@@ -36,5 +40,12 @@ public record SequenceParticipant(string ParticipantName, string Alias, string T
                 .FirstOrDefault(m => m.ResultAssignmentCode == varName)
                 ?.ResponseType ?? "object";
         return $"{msgThatGeneratedVar} {varName}";
+    }
+
+    public void Deconstruct(out string ParticipantName, out string Alias, out string Type)
+    {
+        ParticipantName = this.ParticipantName;
+        Alias = this.Alias;
+        Type = this.Type;
     }
 }

@@ -24,9 +24,9 @@ namespace Puppy.SequenceSourceGenerator
             var lastParenthesis = messageName.LastIndexOf('(');
             if (lastParenthesis >= 0)
             {
-                var paramsPart = messageName[(lastParenthesis + 1)..].Trim().TrimEnd(')');
+                var paramsPart = messageName.Substring(lastParenthesis + 1).Trim().TrimEnd(')');
                 ParametersCode = paramsPart;
-                MessageName = messageName[..lastParenthesis].Trim().ToPascalCase();
+                MessageName = messageName.Substring(0, lastParenthesis).Trim().ToPascalCase();
             }
             else
             {
@@ -42,7 +42,7 @@ namespace Puppy.SequenceSourceGenerator
             var lastParenthesis = responseName.LastIndexOf('(');
             if (lastParenthesis >= 0)
             {
-                var paramsPart = responseName[(lastParenthesis + 1)..].Trim().TrimEnd(')');
+                var paramsPart = responseName.Substring(lastParenthesis + 1).Trim().TrimEnd(')');
                 ResultAssignmentCode = paramsPart;
             }
             else

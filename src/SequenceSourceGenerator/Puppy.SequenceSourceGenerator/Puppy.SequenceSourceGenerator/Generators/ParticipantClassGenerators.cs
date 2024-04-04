@@ -98,7 +98,7 @@ public interface {participantInterfaceName}
                     .Split(',')
                     .Select(p => caller.GetVarDeclarationFor(p.Trim()))
                     .ToArray();
-            return $"{msg.ResponseType} {msg.MessageName}({string.Join(',', paramsForMethod) });";
+            return $"{msg.ResponseType} {msg.MessageName}({string.Join(",", paramsForMethod) });";
         }
 
         public IEnumerable<(string InterfaceName, string Contents)> GenerateCode(ParsedDiagram diagram)

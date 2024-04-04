@@ -51,6 +51,10 @@ public class SequenceParsingTests
         _testOutputHelper.WriteLine(filesGenerated.ToString());
         Assert.Equal(14, filesGenerated.Count());
 
+        var orchestratorFile = filesGenerated
+            .FirstOrDefault(r => r.InterfaceName == "FlowOrchestratorBase");
+        Assert.NotNull(orchestratorFile);
+
     }
     //
 }
