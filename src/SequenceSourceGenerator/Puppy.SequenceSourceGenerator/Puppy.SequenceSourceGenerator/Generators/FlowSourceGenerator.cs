@@ -1,47 +1,99 @@
-﻿namespace Puppy.SequenceSourceGenerator.Generators;
+﻿using System.Text;
+using Microsoft.CodeAnalysis.Text;
+
+namespace Puppy.SequenceSourceGenerator.Generators;
 
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-public class FlowSourceGenerator: ISourceGenerator
+[Generator]
+public class FlowSourceGenerator: IIncrementalGenerator
 {
-    public void Initialize(GeneratorInitializationContext context)
+    private const string attributeName = "FlowDefinitionAttribute";
+    private const string attributeFullName = "Puppy.SequenceSourceGenerator.Generators.FlowDefinitionAttribute";
+    public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-    }
+        context.RegisterPostInitializationOutput(ctx => ctx.AddSource(
+            "FlowExtensionsAttribute.g.cs", 
+            SourceText.From(FlowDefinitionAttributeHelper.Attribute, Encoding.UTF8)));
+        
+        // Define a provider that finds all classes with the 'MyAttribute'
+        
+        var flowClassesInfo = context.SyntaxProvider
+            .ForAttributeWithMetadataName(attributeFullName,
+                predicate: static (s, _) => s is ClassDeclarationSyntax { AttributeLists.Count: > 0 },
+                GetFlowClassInfo)
+            .Collect()
+            // .SelectMany((enumInfos, _) => enumInfos.Distinct())
+            ;
+        
+        var onlyMarkDownsProvider = context.AdditionalTextsProvider.Where(f =>
+            f.Path.EndsWith(".md", StringComparison.OrdinalIgnoreCase));
+        // Combine the class declarations with the additional text files
+        var combinedProvider = onlyMarkDownsProvider.Combine(
+            flowClassesInfo
+            );
 
-    public void Execute(GeneratorExecutionContext context)
-    {
-    // Retrieve the compilation that represents the user's project
-    var compilation = context.Compilation;
+        // Generate the source for each combination of class declaration and additional text
+        context.RegisterSourceOutput(combinedProvider, (spc, source) => {
+            var (additionalTexts , classDeclarations) = source;
 
-    // Find all class declarations in the user's project
-    var classes = compilation.SyntaxTrees
-        .SelectMany(syntaxTree => syntaxTree.GetRoot().DescendantNodes())
-        .OfType<ClassDeclarationSyntax>();
-
-    foreach (var classDeclaration in classes)
-    {
-        // Get the semantic model for the syntax tree that contains the class declaration
-        var model = compilation.GetSemanticModel(classDeclaration.SyntaxTree);
-
-        // Get the symbol that represents the class
-        var classSymbol = model.GetDeclaredSymbol(classDeclaration);
-
-        // Iterate through all attributes of the class
-        foreach (var attribute in classSymbol.GetAttributes())
-        {
-            // Check if the attribute is the one you're interested in
-            if (attribute.AttributeClass.Name == "FlowDefinition")
+            if (additionalTexts == null) return;
+            foreach (var classDeclaration in classDeclarations)
             {
-                // Read the attribute's properties
-                foreach (var arg in attribute.NamedArguments)
+                // Find the attribute and get the file name
+                var additionalFileName = classDeclaration.FilePath;
+
+                // Find the additional file that matches the file name
+                if (additionalTexts.Path.EndsWith(additionalFileName))
                 {
-                    // Do something with the attribute's properties
-                    // For example, print the name and value of the property
-                    Console.WriteLine($"{arg.Key}: {arg.Value}");
+                    // Generate the source code using the content of the additional file
+                    string generatedCode = GenerateCodeBasedOnAdditionalFile(classDeclaration, additionalTexts.GetText().ToString());
+
+                    // Add the generated source code to the compilation
+                    spc.AddSource($"Flow_Generated.cs", SourceText.From(generatedCode, Encoding.UTF8));
                 }
             }
-        }
+        });
+    }
+
+    private string GenerateCodeBasedOnAdditionalFile(FlowClassInfo classDeclaration, string fileContent)
+    {
+        // Implement your logic to generate code based on the content of the additional file
+        return $"// Generated code based on the additional file content {classDeclaration.Namespace} {classDeclaration.FilePath}";
+    }
+    private FlowClassInfo GetFlowClassInfo(GeneratorAttributeSyntaxContext context, CancellationToken cancellationToken)
+    {
+        var type = (INamedTypeSymbol)context.TargetSymbol;
+        var flowFilePath = context.Attributes
+            .FirstOrDefault(a => a.AttributeClass?.Name.ToString() == attributeName)
+            ?.NamedArguments.FirstOrDefault(a => a.Key == "DefinitionFilePath")
+            .Value.Value?.ToString() ?? "";
+        var enumInfo = new FlowClassInfo(type, flowFilePath);
+        //
+        // if (_logger.IsEnabled(LogLevel.Debug))
+        //     _logger.Log(LogLevel.Debug, $"Smart Enum found: {enumInfo.Namespace}.{enumInfo.Name}");
+
+        return enumInfo;
     }
 }
+
+internal readonly struct FlowClassInfo(INamedTypeSymbol type, string flowFilePath)
+{
+    public readonly string Namespace = type.ContainingNamespace.IsGlobalNamespace ? string.Empty : type.ContainingNamespace.ToString();
+    public readonly string FilePath = flowFilePath;
+}
+
+public class FlowDefinitionAttributeHelper
+{
+    public const string Attribute = @"
+namespace Puppy.SequenceSourceGenerator.Generators
+{
+    [AttributeUsage(AttributeTargets.Class)]
+    public class FlowDefinitionAttribute : Attribute
+    {
+        public string DefinitionFilePath { get; set; } = string.Empty;
+        public string SectionName { get; set; } = string.Empty;
+    }
+}";
 }

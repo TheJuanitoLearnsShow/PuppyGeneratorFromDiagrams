@@ -4,6 +4,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Puppy.SequenceSourceGenerat
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Puppy.SequenceSourceGenerator.Tests", "Puppy.SequenceSourceGenerator.Tests\Puppy.SequenceSourceGenerator.Tests.csproj", "{97542CFD-52A1-4DA9-A1FA-B1667001908B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Puppy.SequenceSourceGenerator.Sample", "Puppy.SequenceSourceGenerator.Sample\Puppy.SequenceSourceGenerator.Sample.csproj", "{A1723FAF-8B12-4087-BB5D-639D9D218696}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -18,5 +20,9 @@ Global
 		{97542CFD-52A1-4DA9-A1FA-B1667001908B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{97542CFD-52A1-4DA9-A1FA-B1667001908B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{97542CFD-52A1-4DA9-A1FA-B1667001908B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A1723FAF-8B12-4087-BB5D-639D9D218696}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A1723FAF-8B12-4087-BB5D-639D9D218696}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A1723FAF-8B12-4087-BB5D-639D9D218696}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A1723FAF-8B12-4087-BB5D-639D9D218696}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
