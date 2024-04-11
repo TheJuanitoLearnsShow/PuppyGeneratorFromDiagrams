@@ -63,7 +63,7 @@ namespace Puppy.SequenceSourceGenerator.Generators
             return resultStorageCode + callingMethodCode;
         }
 
-        private IEnumerable<(string ClassName, string Contents)> GenerateCodeForParticipant(
+        private IEnumerable<(string ClassName, string Contents)> GenerateCodeForParticipantOld(
             SequenceParticipant participant, IReadOnlyCollection<SequenceParticipant> participants)
         {
             var participantInterfaceName = participant.Type.ToPascalCase();
@@ -85,30 +85,90 @@ public interface {participantInterfaceName}
             var payloadClasses = participant.GetMessages().SelectMany(GenerateClassesForMessage);
             return payloadClasses.Append((participantInterfaceName, mainInterface));
         }
+        
+        private IEnumerable<(string ClassName, InterfaceToGenerate Contents)> GenerateCodeForParticipant(
+            SequenceParticipant participant, IReadOnlyCollection<SequenceParticipant> participants)
+        {
+            var participantInterfaceName = participant.Type.ToPascalCase();
+            var mainInterface = new InterfaceToGenerate
+            {
+                Name = participantInterfaceName,
+                Methods = participant.GetMessages()
+                    .Select(m =>
+                    {
+                        var caller = participants.FirstOrDefault(p => p.Alias == m.From);
+                        return GenerateMethodDeclarationForMessage(m, caller);
+                    })
+                    .ToList()
+            };
 
-        private string GenerateMethodDeclarationForMessage(SynchronousMessage msg, SequenceParticipant? caller)
+            return payloadClasses.Append((participantInterfaceName, mainInterface));
+        }
+
+        private MethodToGenerate GenerateMethodDeclarationForMessage(SynchronousMessage msg, SequenceParticipant? caller)
         {
             if (caller == null || string.IsNullOrEmpty(msg.ParametersCode))
             {
-                return $"{msg.ResponseType} {msg.MessageName}({msg.MessageName}Request request);";
+                return new MethodToGenerate()
+                {
+                    Name = msg.MessageName,
+                    ReturnType = msg.ResponseType,
+                    MethodParams =
+                    [
+                        new ParamToGenerate()
+                        {
+                            Type = $"{msg.MessageName}Request", Name = "request"
+                        }
+                    ]
+                };
             }
 
             var paramsForMethod = 
                 msg.ParametersCode
                     .Split(',')
                     .Select(p => caller.GetVarDeclarationFor(p.Trim()))
-                    .ToArray();
-            return $"{msg.ResponseType} {msg.MessageName}({string.Join(",", paramsForMethod) });";
+                    .ToList();
+            return new MethodToGenerate()
+            {
+                Name = msg.MessageName,
+                ReturnType = msg.ResponseType,
+                MethodParams = paramsForMethod
+            };
         }
 
-        public IEnumerable<(string InterfaceName, string Contents)> GenerateCode(ParsedDiagram diagram)
+        public IEnumerable<(string ClassName, InterfaceToGenerate Contents)> GenerateCodeForInterfaces(ParsedDiagram diagram)
         {
-            var participants = diagram.Participants.Select(p => p.Value).ToList();
-            var classes = participants.SelectMany(p => GenerateCodeForParticipant(p, participants));
-            return classes.Append(GenerateCodeForOrchestrator(participants));
+            var participants = diagram.Participants
+                .Select(p => p.Value)
+                .ToList();
+            var classes = participants
+                .SelectMany(p => 
+                    GenerateCodeForParticipant(p, participants));
+            
+            // TODO: classes should be an object that then can be merged, not just text
+            return classes;
+        }
+        public IEnumerable<(string InterfaceName, string Contents)> GenerateCodeForPayloads(ParsedDiagram diagram)
+        {
+            var participants = diagram.Participants
+                .Select(p => p.Value)
+                .ToList();
+            
+            var payloadClasses = participants
+                .SelectMany(p => p.GetMessages()
+                    .SelectMany(GenerateClassesForMessage)
+                );
+            return payloadClasses;
+        }
+        public (string ClassName, string Contents) GenerateCodeForOrchestrator(ParsedDiagram diagram)
+        {
+            var participants = diagram.Participants
+                .Select(p => p.Value)
+                .ToList();
+            return GenerateCodeForOrchestrator(participants);
         }
         
-        IEnumerable<(string ClassName, string Contents)> GenerateClassesForMessage(SynchronousMessage msg)
+        private IEnumerable<(string ClassName, string Contents)> GenerateClassesForMessage(SynchronousMessage msg)
         {
             yield return ($"{msg.ResponseType}", GenerateMessagePayloadClass($"{msg.ResponseType}"));
             yield return ($"{msg.RequestType}", GenerateMessagePayloadClass($"{msg.RequestType}"));
@@ -128,5 +188,68 @@ public partial class {className}
 }
 ";
         }
+    }
+
+    public class InterfaceToGenerate
+    {
+        public string Name { get; set; }
+        public List<MethodToGenerate> Methods { get; set; }
+    }
+    public class MethodToGenerate : IEquatable<MethodToGenerate>
+    {
+        public string ReturnType { get; set; } = "object";
+        public string Name { get; set; } = string.Empty;
+        public List<ParamToGenerate> MethodParams { get; set; } = [];
+
+        public bool Equals(MethodToGenerate? other)
+        {
+            if (ReferenceEquals(null, other)) return false;
+            if (ReferenceEquals(this, other)) return true;
+            return ReturnType == other.ReturnType 
+                   && Name == other.Name 
+                   && AreParamTypesEqual(MethodParams, other.MethodParams);
+        }
+
+        private bool AreParamTypesEqual(List<ParamToGenerate> methodParams, List<ParamToGenerate> otherMethodParams)
+        {
+            return methodParams.Select((p, idx) => otherMethodParams[idx].Type == p.Type)
+                .All(r => true);
+        }
+
+        public override bool Equals(object? obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            if (obj.GetType() != this.GetType()) return false;
+            return Equals((MethodToGenerate)obj);
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                var hashCode = ReturnType.GetHashCode();
+                hashCode = (hashCode * 397) ^ Name.GetHashCode();
+                hashCode = (hashCode * 397) ^ MethodParams.GetHashCode();
+                return hashCode;
+            }
+        }
+
+        public static bool operator ==(MethodToGenerate? left, MethodToGenerate? right)
+        {
+            return Equals(left, right);
+        }
+
+        public static bool operator !=(MethodToGenerate? left, MethodToGenerate? right)
+        {
+            return !Equals(left, right);
+        }
+    }
+
+    public struct ParamToGenerate
+    {
+        public string Type;
+        public string Name;
+
     }
 }

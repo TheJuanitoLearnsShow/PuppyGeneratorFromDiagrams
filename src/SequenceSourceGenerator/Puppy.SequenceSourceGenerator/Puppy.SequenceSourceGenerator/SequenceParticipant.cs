@@ -1,5 +1,6 @@
 ﻿using System.Collections.Immutable;
 using CaseExtensions;
+using Puppy.SequenceSourceGenerator.Generators;
 
 namespace Puppy.SequenceSourceGenerator;
 
@@ -33,7 +34,7 @@ public class SequenceParticipant(string participantName, string alias, string ty
     public IReadOnlyList<string> GetParticipantsCalled() => 
         _messagesSent.Select(m => m.To).Distinct().ToImmutableList();
 
-    public string GetVarDeclarationFor(string varName)
+    public string GetVarDeclarationForOld(string varName)
     {
         var msgThatGeneratedVar = 
             _messagesSent
@@ -41,7 +42,15 @@ public class SequenceParticipant(string participantName, string alias, string ty
                 ?.ResponseType ?? "object";
         return $"{msgThatGeneratedVar} {varName}";
     }
-
+    internal ParamToGenerate GetVarDeclarationFor(string varName)
+    {
+        var msgThatGeneratedVar = 
+            _messagesSent
+                .FirstOrDefault(m => m.ResultAssignmentCode == varName)
+                ?.ResponseType ?? "object";
+        return new ParamToGenerate() { Name = varName, Type = msgThatGeneratedVar };
+    }
+    
     public void Deconstruct(out string ParticipantName, out string Alias, out string Type)
     {
         ParticipantName = this.ParticipantName;
