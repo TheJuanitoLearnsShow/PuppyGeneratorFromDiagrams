@@ -37,8 +37,9 @@ public class SequenceParsingTests
         var result = parser.Parse(string.Join(Environment.NewLine, mermaidDiagram));
 
         var generator = new ParticipantClassGenerators("testGen");
-        var generatorResult = new 
-        var filesGenerated = generator.GenerateCodeForInterfaces(result).ToList();
+        var generatorResult = new GeneratorResult(result, generator);
+        var filesGenerated = generatorResult.PayloadClasses;
+        // TODO: add logic for materializing participants to string,string
 
         var folderName = "generated";
         if (!Directory.Exists(folderName))
@@ -47,13 +48,13 @@ public class SequenceParsingTests
         }
         foreach(var f in filesGenerated)
         {
-            File.WriteAllText( Path.Combine(folderName, f.InterfaceName + ".cs"), f.Contents);
+            File.WriteAllText( Path.Combine(folderName, f.Key + ".cs"), f.Value);
         }
         _testOutputHelper.WriteLine(filesGenerated.ToString());
         Assert.Equal(14, filesGenerated.Count());
 
         var orchestratorFile = filesGenerated
-            .FirstOrDefault(r => r.InterfaceName == "FlowOrchestratorBase");
+            .FirstOrDefault(r => r.Key == "FlowOrchestratorBase");
         Assert.NotNull(orchestratorFile);
 
     }

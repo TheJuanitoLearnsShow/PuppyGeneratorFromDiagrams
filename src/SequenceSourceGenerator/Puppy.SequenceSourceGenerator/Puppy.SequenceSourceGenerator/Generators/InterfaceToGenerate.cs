@@ -15,4 +15,9 @@ public class InterfaceToGenerate
             Methods = Methods.Concat(otherParticipant.Methods).Distinct().ToList()
         };
     }
+
+    public object ToCode()
+    {
+        throw new NotImplementedException();
+    }
 }

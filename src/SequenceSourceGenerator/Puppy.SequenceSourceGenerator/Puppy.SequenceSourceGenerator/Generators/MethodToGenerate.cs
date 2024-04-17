@@ -49,4 +49,10 @@ public class MethodToGenerate : IEquatable<MethodToGenerate>
     {
         return !Equals(left, right);
     }
+
+    public string ToCode()
+    {
+        var paramCode = string.Join(", ", MethodParams.Select(p => p.ToCode()));
+        return $"{ReturnType} {Name}({paramCode});";
+    }
 }
