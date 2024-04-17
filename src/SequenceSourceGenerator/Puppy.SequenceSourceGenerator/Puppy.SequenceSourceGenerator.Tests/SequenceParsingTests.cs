@@ -37,7 +37,8 @@ public class SequenceParsingTests
         var result = parser.Parse(string.Join(Environment.NewLine, mermaidDiagram));
 
         var generator = new ParticipantClassGenerators("testGen");
-        var filesGenerated = generator.GenerateCode(result).ToList();
+        var generatorResult = new 
+        var filesGenerated = generator.GenerateCodeForInterfaces(result).ToList();
 
         var folderName = "generated";
         if (!Directory.Exists(folderName))

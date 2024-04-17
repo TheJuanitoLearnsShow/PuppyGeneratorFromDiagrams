@@ -86,7 +86,7 @@ public interface {participantInterfaceName}
             return payloadClasses.Append((participantInterfaceName, mainInterface));
         }
         
-        private IEnumerable<(string ClassName, InterfaceToGenerate Contents)> GenerateCodeForParticipant(
+        private (string ClassName, InterfaceToGenerate Contents) GenerateCodeForParticipant(
             SequenceParticipant participant, IReadOnlyCollection<SequenceParticipant> participants)
         {
             var participantInterfaceName = participant.Type.ToPascalCase();
@@ -102,7 +102,7 @@ public interface {participantInterfaceName}
                     .ToList()
             };
 
-            return payloadClasses.Append((participantInterfaceName, mainInterface));
+            return (participantInterfaceName, mainInterface);
         }
 
         private MethodToGenerate GenerateMethodDeclarationForMessage(SynchronousMessage msg, SequenceParticipant? caller)
@@ -142,10 +142,8 @@ public interface {participantInterfaceName}
                 .Select(p => p.Value)
                 .ToList();
             var classes = participants
-                .SelectMany(p => 
+                .Select(p =>
                     GenerateCodeForParticipant(p, participants));
-            
-            // TODO: classes should be an object that then can be merged, not just text
             return classes;
         }
         public IEnumerable<(string InterfaceName, string Contents)> GenerateCodeForPayloads(ParsedDiagram diagram)
@@ -190,66 +188,51 @@ public partial class {className}
         }
     }
 
-    public class InterfaceToGenerate
-    {
-        public string Name { get; set; }
-        public List<MethodToGenerate> Methods { get; set; }
-    }
-    public class MethodToGenerate : IEquatable<MethodToGenerate>
-    {
-        public string ReturnType { get; set; } = "object";
-        public string Name { get; set; } = string.Empty;
-        public List<ParamToGenerate> MethodParams { get; set; } = [];
-
-        public bool Equals(MethodToGenerate? other)
-        {
-            if (ReferenceEquals(null, other)) return false;
-            if (ReferenceEquals(this, other)) return true;
-            return ReturnType == other.ReturnType 
-                   && Name == other.Name 
-                   && AreParamTypesEqual(MethodParams, other.MethodParams);
-        }
-
-        private bool AreParamTypesEqual(List<ParamToGenerate> methodParams, List<ParamToGenerate> otherMethodParams)
-        {
-            return methodParams.Select((p, idx) => otherMethodParams[idx].Type == p.Type)
-                .All(r => true);
-        }
-
-        public override bool Equals(object? obj)
-        {
-            if (ReferenceEquals(null, obj)) return false;
-            if (ReferenceEquals(this, obj)) return true;
-            if (obj.GetType() != this.GetType()) return false;
-            return Equals((MethodToGenerate)obj);
-        }
-
-        public override int GetHashCode()
-        {
-            unchecked
-            {
-                var hashCode = ReturnType.GetHashCode();
-                hashCode = (hashCode * 397) ^ Name.GetHashCode();
-                hashCode = (hashCode * 397) ^ MethodParams.GetHashCode();
-                return hashCode;
-            }
-        }
-
-        public static bool operator ==(MethodToGenerate? left, MethodToGenerate? right)
-        {
-            return Equals(left, right);
-        }
-
-        public static bool operator !=(MethodToGenerate? left, MethodToGenerate? right)
-        {
-            return !Equals(left, right);
-        }
-    }
-
     public struct ParamToGenerate
     {
         public string Type;
         public string Name;
 
+    }
+
+    public class GeneratorResult
+    {
+        public ImmutableDictionary<string, InterfaceToGenerate> Participants { get; private set; }
+        public ImmutableDictionary<string, string> PayloadClasses { get; private set; }
+        public (string ClassName, string Contents) Orchestrator { get; private set; }
+
+        private GeneratorResult()
+        {
+            
+        }
+        public GeneratorResult(ParsedDiagram parsedDiagram, ParticipantClassGenerators generator)
+        {
+            Participants = generator.GenerateCodeForInterfaces(parsedDiagram).ToImmutableDictionary(
+                v => v.ClassName, v => v.Contents);
+            PayloadClasses = generator.GenerateCodeForPayloads(parsedDiagram).ToImmutableDictionary(
+                v => v.InterfaceName, v => v.Contents);
+            Orchestrator = generator.GenerateCodeForOrchestrator(parsedDiagram);
+        }
+
+        public GeneratorResult Merge(GeneratorResult other)
+        {
+            var newParticipants = new Dictionary<string, InterfaceToGenerate>(Participants);
+
+            foreach (var otherParticipant in other.Participants)
+            {
+                var key = otherParticipant.Key;
+                if (newParticipants.TryGetValue(key, out var existingVal))
+                {
+                    newParticipants[key] = existingVal.Merge(otherParticipant.Value);
+                }
+            }
+
+            var newPayloadClasses = PayloadClasses.Concat(other.PayloadClasses).Distinct();
+            return new GeneratorResult()
+            {
+PayloadClasses = newPayloadClasses.to,
+Participants = {  }
+            };
+        }
     }
 }
