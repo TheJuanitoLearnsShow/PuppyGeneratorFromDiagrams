@@ -18,7 +18,8 @@ namespace Puppy.SequenceSourceGenerator.Generators
             _nameSpace = nameSpace;
         }
 
-        private (string ClassName, string Contents) GenerateCodeForOrchestrator(IReadOnlyCollection<SequenceParticipant> participants)
+        private (string ClassName, string Contents) GenerateCodeForOrchestrator(
+            IReadOnlyCollection<SequenceParticipant> participants, string flowName)
         {
             var orchestrator = participants
                 .FirstOrDefault(p =>
@@ -26,10 +27,7 @@ namespace Puppy.SequenceSourceGenerator.Generators
             if (orchestrator == null) return (string.Empty, string.Empty);
             var participantInterfaceName = orchestrator.ParticipantName.ToPascalCase() + "Base";
             var fieldsToCalledParticipants = orchestrator.GetParticipantsCalled().Select(pn =>
-                {
-                    var pcalled = participants.FirstOrDefault(p => p.Alias == pn);
-                    return pcalled;
-                }
+                participants.FirstOrDefault(p => p.Alias == pn)
             ).Where(p => p != null)
             .Select(p => $"\nprivate readonly {p.Type} {p.Alias};")
             .ToList();
@@ -44,12 +42,12 @@ namespace Puppy.SequenceSourceGenerator.Generators
                                  """
                                 + "\n{\n" 
                                 + string.Join("\n", fieldsToCalledParticipants)
-                                + "\npublic async Task ExecuteFlow() {\n"
+                                + $"\npublic async Task Execute{flowName}()" 
+                                + " {\n"
                                 + string.Join("\n", flowFunction)
                                 + "\n}"
                                 + "\n}\n";
-            var payloadClasses = orchestrator.GetMessages().SelectMany(GenerateClassesForMessage);
-            return (participantInterfaceName, mainClass);
+            return (participantInterfaceName + '.' + flowName, mainClass);
         }
 
         private string GenerateStepCode(SynchronousMessage msg, int stepIdx)
@@ -158,12 +156,12 @@ public interface {participantInterfaceName}
                 );
             return payloadClasses;
         }
-        public (string ClassName, string Contents) GenerateCodeForOrchestrator(ParsedDiagram diagram)
+        public (string ClassName, string Contents) GenerateCodeForOrchestrator(ParsedDiagram diagram, string flowName)
         {
             var participants = diagram.Participants
                 .Select(p => p.Value)
                 .ToList();
-            return GenerateCodeForOrchestrator(participants);
+            return GenerateCodeForOrchestrator(participants, flowName);
         }
         
         private IEnumerable<(string ClassName, string Contents)> GenerateClassesForMessage(SynchronousMessage msg)

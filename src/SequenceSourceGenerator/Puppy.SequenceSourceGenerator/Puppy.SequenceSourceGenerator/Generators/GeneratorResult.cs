@@ -12,13 +12,13 @@ public class GeneratorResult
     {
             
     }
-    public GeneratorResult(ParsedDiagram parsedDiagram, ParticipantClassGenerators generator)
+    public GeneratorResult(ParsedDiagram parsedDiagram, ParticipantClassGenerators generator, string flowName)
     {
         Participants = generator.GenerateCodeForInterfaces(parsedDiagram).ToImmutableDictionary(
             v => v.ClassName, v => v.Contents);
         PayloadClasses = generator.GenerateCodeForPayloads(parsedDiagram).ToImmutableDictionary(
             v => v.InterfaceName, v => v.Contents);
-        var orchestrator = generator.GenerateCodeForOrchestrator(parsedDiagram);
+        var orchestrator = generator.GenerateCodeForOrchestrator(parsedDiagram, flowName);
         Orchestrators = new [] {
             orchestrator
         }.ToImmutableList();
@@ -46,13 +46,14 @@ public class GeneratorResult
         };
     }
     
-    public List<(string ClassName, string Contents)> ToFilesToGenerate(string nameSpace)
+    public ImmutableList<(string ClassName, string Contents)> ToFilesToGenerate(string nameSpace)
     {
-        var participants = Participants.Select(kv =>
+        var fileToGenerate = Participants.Select(kv =>
             (kv.Key, GenerateCodeForParticipant(nameSpace, kv.Value))
         ).ToList();
-        
-        
+        fileToGenerate.AddRange(PayloadClasses.Select(kv => (kv.Key, kv.Value)));
+        fileToGenerate.AddRange(Orchestrators);
+        return fileToGenerate.ToImmutableList();
     }
     private string GenerateCodeForParticipant(string nameSpace,
         InterfaceToGenerate participant)

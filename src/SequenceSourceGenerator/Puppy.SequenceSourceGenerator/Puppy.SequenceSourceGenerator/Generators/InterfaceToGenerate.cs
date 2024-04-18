@@ -8,11 +8,11 @@ public class InterfaceToGenerate
     public InterfaceToGenerate Merge(InterfaceToGenerate otherParticipant)
     {
         var newMethods = otherParticipant.Methods.Where(otherM =>
-            Methods.Exists(mym => mym.Equals(otherM)));
+            !Methods.Exists(mym => mym.Equals(otherM)));
         return new InterfaceToGenerate()
         {
             Name = Name,
-            Methods = Methods.Concat(otherParticipant.Methods).Distinct().ToList()
+            Methods = Methods.Concat(newMethods).ToList()
         };
     }
 

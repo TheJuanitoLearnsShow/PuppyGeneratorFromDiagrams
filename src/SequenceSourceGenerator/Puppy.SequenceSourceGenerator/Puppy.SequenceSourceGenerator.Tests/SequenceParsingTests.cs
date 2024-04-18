@@ -29,34 +29,44 @@ public class SequenceParsingTests
     [Fact]
     public void TestGenerator()
     {
-        var mdFile = File.ReadAllLines("sample-flow.md");
-        var mermaidDiagram = mdFile.SkipWhile(l => !l.StartsWith("```mermaid"))
-            .Skip(1)
-            .TakeWhile(l => !l.StartsWith("```"));
-        var parser = new SequenceDiagramParser();
-        var result = parser.Parse(string.Join(Environment.NewLine, mermaidDiagram));
+        const string nameSpace = "testGen";
+        var generatorResult = GenerateFromDiagram("sample-flow.md", nameSpace, "flow1");
+        var generatorResult2 = GenerateFromDiagram("sample-flow-2.md", nameSpace, "flow2");
+        var filesGenerated = generatorResult
+            .Merge(generatorResult2)
+            .ToFilesToGenerate(nameSpace);
 
-        var generator = new ParticipantClassGenerators("testGen");
-        var generatorResult = new GeneratorResult(result, generator);
-        var filesGenerated = generatorResult.PayloadClasses;
-        // TODO: add logic for materializing participants to string,string
-
-        var folderName = "generated";
+        const string folderName = "generated";
         if (!Directory.Exists(folderName))
         {
             Directory.CreateDirectory(folderName);
         }
         foreach(var f in filesGenerated)
         {
-            File.WriteAllText( Path.Combine(folderName, f.Key + ".cs"), f.Value);
+            File.WriteAllText( Path.Combine(folderName, f.ClassName + ".cs"), f.Contents);
         }
         _testOutputHelper.WriteLine(filesGenerated.ToString());
-        Assert.Equal(14, filesGenerated.Count());
+        Assert.Equal(17, filesGenerated.Count());
 
-        var orchestratorFile = filesGenerated
-            .FirstOrDefault(r => r.Key == "FlowOrchestratorBase");
-        Assert.NotNull(orchestratorFile);
+        Assert.Contains(filesGenerated, r => r.ClassName == "FlowOrchestratorBase.flow1");
+        var aliceFile = filesGenerated.First(f => f.ClassName == "IAlice");
+        var uniqueMethod = "GreetingResponse HiAlice(HiBobResponse greetingResult);";
+        Assert.Equal(aliceFile.Contents.IndexOf(uniqueMethod, StringComparison.Ordinal),
+            aliceFile.Contents.LastIndexOf(uniqueMethod, StringComparison.Ordinal));
+    }
 
+    private static GeneratorResult GenerateFromDiagram(string mdFilePath, string nameSpace, string flowName)
+    {
+        var mdFile = File.ReadAllLines(mdFilePath);
+        var mermaidDiagram = mdFile.SkipWhile(l => !l.StartsWith("```mermaid"))
+            .Skip(1)
+            .TakeWhile(l => !l.StartsWith("```"));
+        var parser = new SequenceDiagramParser();
+        var result = parser.Parse(string.Join(Environment.NewLine, mermaidDiagram));
+
+        var generator = new ParticipantClassGenerators(nameSpace);
+        var generatorResult = new GeneratorResult(result, generator, flowName);
+        return generatorResult;
     }
     //
 }
