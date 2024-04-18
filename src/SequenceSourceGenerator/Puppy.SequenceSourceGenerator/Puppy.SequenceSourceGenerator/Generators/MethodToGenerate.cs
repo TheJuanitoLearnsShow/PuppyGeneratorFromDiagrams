@@ -6,6 +6,8 @@ public class MethodToGenerate : IEquatable<MethodToGenerate>
     public string Name { get; set; } = string.Empty;
     public List<ParamToGenerate> MethodParams { get; set; } = [];
 
+    public string MethodBody { get; set; } = string.Empty;
+
     public bool Equals(MethodToGenerate? other)
     {
         if (ReferenceEquals(null, other)) return false;

@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Net;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
@@ -31,9 +32,13 @@ namespace Puppy.SequenceSourceGenerator.Generators
             ).Where(p => p != null)
             .Select(p => $"\nprivate readonly {p.Type} {p.Alias};")
             .ToList();
-            var flowFunction = orchestrator.GetMessagesSent()
-                .Select(GenerateStepCode)
-                .ToImmutableList();
+            var steps = orchestrator.GetMessagesSent()
+                    .Aggregate(
+                        new StepsCalledState(),
+                        (state, message) => GenerateStepCode(message, state, flowName)
+                    );
+            var callingCode =
+                string.Join("\n", steps.CallingCode);
             var mainClass = $"""
                                  namespace {_nameSpace};
                                  using System.Collections.Generic;
@@ -50,15 +55,55 @@ namespace Puppy.SequenceSourceGenerator.Generators
             return (participantInterfaceName + '.' + flowName, mainClass);
         }
 
-        private string GenerateStepCode(SynchronousMessage msg, int stepIdx)
+        private StepsCalledState GenerateStepCode(SynchronousMessage msg, 
+            StepsCalledState state
+            , string flowName)
+        {
+            var stepNum = state.StepIdx + 1;
+            var methodParams =
+                string.IsNullOrEmpty(msg.ParametersCode)
+                    ? []
+                    : msg.ParametersCode.Split(',').Select(
+                        pName => MapToParamToGenerate(pName, state.ResponsesSoFar))
+                        .ToList();
+            var callingMethodCode = string.IsNullOrEmpty(msg.ParametersCode)
+                ? $"return {msg.To}.{msg.MessageName}();"
+                : $"return {msg.To}.{msg.MessageName}({msg.ParametersCode});";
+
+            var methodForStep = new MethodToGenerate()
+            {
+                Name = $"{flowName}Step{stepNum}",
+                ReturnType = msg.ResponseType,
+                MethodParams = methodParams,
+                MethodBody = callingMethodCode
+            };
+            var resultInfo = string.IsNullOrEmpty(msg.ResultAssignmentCode)
+                ? new ParamToGenerate() { Name = $"step{stepNum}", Type = msg.ResponseType }
+                : new ParamToGenerate() { Name = $"{msg.ResultAssignmentCode}", Type = msg.ResponseType };
+                // : $"\nvar {msg.ResultAssignmentCode} = ";
+            state.Methods.Add(methodForStep);
+            state.ResponsesSoFar.Add(resultInfo);
+            state.CallingCode.Add(GenerateStepCallingCode(msg, stepNum, methodForStep.Name));
+            state.StepIdx++;
+            return state;
+        }
+        
+        
+        private string GenerateStepCallingCode(SynchronousMessage msg, int stepNum, string stepMethodName)
         {
             var resultStorageCode = string.IsNullOrEmpty(msg.ResultAssignmentCode) ?
-                $"\nvar step{stepIdx + 1} = "
+                $"\nvar step{stepNum} = "
                 : $"\nvar {msg.ResultAssignmentCode} = ";
             var callingMethodCode = string.IsNullOrEmpty(msg.ParametersCode)
-                ? $"{msg.To}.{msg.MessageName}();"
-                : $"{msg.To}.{msg.MessageName}({msg.ParametersCode});";
+                ? $"{stepMethodName}();"
+                : $"{stepMethodName}({msg.ParametersCode});";
             return resultStorageCode + callingMethodCode;
+        }
+
+        private ParamToGenerate MapToParamToGenerate(string pName, List<ParamToGenerate> stateResponsesSoFar)
+        {
+            var resultFromPrevStep = stateResponsesSoFar.FirstOrDefault(r => r.Name == pName);
+            return resultFromPrevStep;
         }
 
         private IEnumerable<(string ClassName, string Contents)> GenerateCodeForParticipantOld(
