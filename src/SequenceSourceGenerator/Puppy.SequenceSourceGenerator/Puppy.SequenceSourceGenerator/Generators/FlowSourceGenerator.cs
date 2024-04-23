@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Collections.Immutable;
+using System.Text;
 using Microsoft.CodeAnalysis.Text;
 
 namespace Puppy.SequenceSourceGenerator.Generators;
@@ -39,24 +40,64 @@ public class FlowSourceGenerator: IIncrementalGenerator
             var (additionalTexts , classDeclarations) = source;
 
             if (additionalTexts == null) return;
-            foreach (var classDeclaration in classDeclarations)
-            {
-                // Find the attribute and get the file name
-                var additionalFileName = classDeclaration.FilePath;
-
-                // Find the additional file that matches the file name
-                if (additionalTexts.Path.EndsWith(additionalFileName))
+            var generatorResults = GetGeneratorResults(classDeclarations, additionalTexts).ToList();
+            var resultsByNamespace = generatorResults
+                .GroupBy(r => r.NameSpace)
+                .SelectMany(grp =>
                 {
-                    // Generate the source code using the content of the additional file
-                    string generatedCode = GenerateCodeBasedOnAdditionalFile(classDeclaration, additionalTexts.GetText().ToString());
-
-                    // Add the generated source code to the compilation
-                    spc.AddSource($"Flow_Generated.cs", SourceText.From(generatedCode, Encoding.UTF8));
-                }
+                    return grp.Aggregate( null, (GeneratorResult? state, GeneratorResult generatorResult) =>
+                        {
+                            if (state == null) return generatorResult;
+                            return state
+                                .Merge(generatorResult);
+                        })?
+                        .ToFilesToGenerate(grp.Key);
+                })
+                .ToList();
+            foreach (var fileToGenerate in resultsByNamespace)
+            {
+                spc.AddSource($"Flow_Generated_{fileToGenerate.ClassName}.cs", 
+                    SourceText.From(fileToGenerate.Contents, Encoding.UTF8));
             }
         });
     }
 
+    private static IEnumerable<GeneratorResult> GetGeneratorResults(ImmutableArray<FlowClassInfo> classDeclarations, AdditionalText additionalTexts)
+    {
+        foreach (var classDeclaration in classDeclarations)
+        {
+            // Find the attribute and get the file name
+            var additionalFileName = classDeclaration.FilePath;
+
+            // Find the additional file that matches the file name
+            if (additionalTexts.Path.EndsWith(additionalFileName))
+            {
+                var lines = additionalTexts.GetText()?.Lines.Select(l => l.ToString() ?? string.Empty).ToList() ?? [];
+                // Generate the source code using the content of the additional file
+                // string generatedCode = GenerateCodeBasedOnAdditionalFile(classDeclaration, additionalTexts.GetText().Lines.Select(l => SourceText.From(l.so)));
+
+                var generatorResult = GenerateFromDiagram(lines, classDeclaration.Namespace, classDeclaration.FlowName);
+
+                yield return generatorResult;
+            }
+        }
+    }
+
+    private static GeneratorResult GenerateFromDiagram(List<string> mdFile, string nameSpace, string flowName)
+    {
+        var mermaidDiagram = mdFile.SkipWhile(l => !l.StartsWith("```mermaid"))
+            .Skip(1)
+            .TakeWhile(l => !l.StartsWith("```"));
+        var parser = new SequenceDiagramParser();
+        var result = parser.Parse(string.Join("\n", mermaidDiagram));
+
+        var generator = new ParticipantClassGenerators(nameSpace);
+        var generatorResult = new GeneratorResult(result, generator, flowName)
+        {
+            NameSpace = nameSpace
+        };
+        return generatorResult;
+    }
     private string GenerateCodeBasedOnAdditionalFile(FlowClassInfo classDeclaration, string fileContent)
     {
         // Implement your logic to generate code based on the content of the additional file
@@ -69,7 +110,11 @@ public class FlowSourceGenerator: IIncrementalGenerator
             .FirstOrDefault(a => a.AttributeClass?.Name.ToString() == attributeName)
             ?.NamedArguments.FirstOrDefault(a => a.Key == "DefinitionFilePath")
             .Value.Value?.ToString() ?? "";
-        var enumInfo = new FlowClassInfo(type, flowFilePath);
+        var flowName = context.Attributes
+            .FirstOrDefault(a => a.AttributeClass?.Name.ToString() == attributeName)
+            ?.NamedArguments.FirstOrDefault(a => a.Key == "FlowName")
+            .Value.Value?.ToString() ?? "Flow";
+        var enumInfo = new FlowClassInfo(type, flowFilePath, flowName);
         //
         // if (_logger.IsEnabled(LogLevel.Debug))
         //     _logger.Log(LogLevel.Debug, $"Smart Enum found: {enumInfo.Namespace}.{enumInfo.Name}");

@@ -4,6 +4,7 @@ namespace Puppy.SequenceSourceGenerator.Generators;
 
 public class GeneratorResult
 {
+    public string NameSpace { get; set; }
     public ImmutableDictionary<string, InterfaceToGenerate> Participants { get; private set; }
     public ImmutableDictionary<string, string> PayloadClasses { get; private set; }
     public ImmutableList<(string, string)> Orchestrators { get; private set; }
@@ -63,7 +64,7 @@ public class GeneratorResult
                              namespace {nameSpace};
                              using System.Collections.Generic;
 
-                             public interface {participantInterfaceName}
+                             public partial interface {participantInterfaceName}
                              """
                             +
                             "\n{\n" +

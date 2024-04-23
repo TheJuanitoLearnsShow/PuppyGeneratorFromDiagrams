@@ -39,6 +39,8 @@ namespace Puppy.SequenceSourceGenerator.Generators
                     );
             var callingCode =
                 string.Join("\n", steps.CallingCode);
+            var stepMethods =
+                string.Join("\n", steps.Methods.Select(m => m.ToOverridableCode()));
             var mainClass = $"""
                                  namespace {_nameSpace};
                                  using System.Collections.Generic;
@@ -49,8 +51,9 @@ namespace Puppy.SequenceSourceGenerator.Generators
                                 + string.Join("\n", fieldsToCalledParticipants)
                                 + $"\npublic async Task Execute{flowName}()" 
                                 + " {\n"
-                                + string.Join("\n", flowFunction)
-                                + "\n}"
+                                + callingCode
+                                + "\n}\n"
+                                + stepMethods
                                 + "\n}\n";
             return (participantInterfaceName + '.' + flowName, mainClass);
         }
@@ -92,11 +95,11 @@ namespace Puppy.SequenceSourceGenerator.Generators
         private string GenerateStepCallingCode(SynchronousMessage msg, int stepNum, string stepMethodName)
         {
             var resultStorageCode = string.IsNullOrEmpty(msg.ResultAssignmentCode) ?
-                $"\nvar step{stepNum} = "
-                : $"\nvar {msg.ResultAssignmentCode} = ";
+                $"\n    var step{stepNum} = "
+                : $"\n    var {msg.ResultAssignmentCode} = ";
             var callingMethodCode = string.IsNullOrEmpty(msg.ParametersCode)
-                ? $"{stepMethodName}();"
-                : $"{stepMethodName}({msg.ParametersCode});";
+                ? $"await {stepMethodName}();"
+                : $"await {stepMethodName}({msg.ParametersCode});";
             return resultStorageCode + callingMethodCode;
         }
 
@@ -114,7 +117,7 @@ namespace Puppy.SequenceSourceGenerator.Generators
 namespace {_nameSpace};
 using System.Collections.Generic;
 
-public interface {participantInterfaceName} 
+public partial interface {participantInterfaceName} 
 """
 +
 "\n{\n" +

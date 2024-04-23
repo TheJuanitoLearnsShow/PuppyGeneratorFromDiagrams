@@ -14,7 +14,7 @@ namespace Puppy.SequenceSourceGenerator
         public string ResponseName { set; get; }
         public string ParametersCode { private set; get; }
         public string ResultAssignmentCode { private set; get; }
-        public string RequestType => ResponseName + "Request";
+        public string RequestType => MessageName + "Request";
         public string ResponseType => ResponseName + "Response";
 
         public SynchronousMessage(string messageName, string from, string to)

@@ -55,6 +55,13 @@ public class MethodToGenerate : IEquatable<MethodToGenerate>
     public string ToCode()
     {
         var paramCode = string.Join(", ", MethodParams.Select(p => p.ToCode()));
-        return $"{ReturnType} {Name}({paramCode});";
+        return $"Task<{ReturnType}> {Name}({paramCode});";
+    }
+    public string ToOverridableCode()
+    {
+        var paramCode = string.Join(", ", MethodParams.Select(p => p.ToCode()));
+        return $"public virtual Task<{ReturnType}> {Name}({paramCode}) {{\n    " +
+               MethodBody
+               + "\n}";
     }
 }

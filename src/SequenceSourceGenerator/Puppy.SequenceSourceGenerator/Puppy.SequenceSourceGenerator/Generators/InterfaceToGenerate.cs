@@ -16,8 +16,4 @@ public class InterfaceToGenerate
         };
     }
 
-    public object ToCode()
-    {
-        throw new NotImplementedException();
-    }
 }
