@@ -38,7 +38,7 @@ namespace Puppy.SequenceSourceGenerator.Generators
                         (state, message) => GenerateStepCode(message, state, flowName)
                     );
             var callingCode =
-                string.Join("\n", steps.CallingCode);
+                string.Join("\n", steps.CallingCode) + (steps.CurrentOptBlock.IsEmpty ? string.Empty : "\n}\n");
             var stepMethods =
                 string.Join("\n", steps.Methods.Select(m => m.ToOverridableCode()));
             var mainClass = $"""
@@ -86,21 +86,35 @@ namespace Puppy.SequenceSourceGenerator.Generators
                 // : $"\nvar {msg.ResultAssignmentCode} = ";
             state.Methods.Add(methodForStep);
             state.ResponsesSoFar.Add(resultInfo);
-            state.CallingCode.Add(GenerateStepCallingCode(msg, stepNum, methodForStep.Name));
+            state.CallingCode.Add(GenerateStepCallingCode(msg, stepNum, methodForStep.Name, state));
             state.StepIdx++;
             return state;
         }
         
         
-        private string GenerateStepCallingCode(SynchronousMessage msg, int stepNum, string stepMethodName)
+        private string GenerateStepCallingCode(SynchronousMessage msg, int stepNum, string stepMethodName,
+            StepsCalledState state)
         {
+            var optBlockCode = string.Empty;
+            if (state.CurrentOptBlock.Condition != msg.OptBlock.Condition)
+            {
+                if (msg.OptBlock.IsEmpty)
+                {
+                    optBlockCode = "\n}\n";
+                }
+                else
+                {
+                    optBlockCode = $"\nif ({msg.OptBlock.Condition}) {{\n";
+                }
+                state.CurrentOptBlock = msg.OptBlock;
+            }
             var resultStorageCode = string.IsNullOrEmpty(msg.ResultAssignmentCode) ?
                 $"\n    var step{stepNum} = "
                 : $"\n    var {msg.ResultAssignmentCode} = ";
             var callingMethodCode = string.IsNullOrEmpty(msg.ParametersCode)
                 ? $"await {stepMethodName}();"
                 : $"await {stepMethodName}({msg.ParametersCode});";
-            return resultStorageCode + callingMethodCode;
+            return optBlockCode + resultStorageCode + callingMethodCode;
         }
 
         private ParamToGenerate MapToParamToGenerate(string pName, List<ParamToGenerate> stateResponsesSoFar)

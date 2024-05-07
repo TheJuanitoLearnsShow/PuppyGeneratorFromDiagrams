@@ -11,6 +11,8 @@ public class SequenceDiagramParser
 
     private static Regex ParticipantRegex => new(@"participant (\w+)(?: as (\w+))?");
 
+    private static Regex AltRegex => new(@"opt ");
+
     public ParsedDiagram Parse(string input)
     {
         var participants = new Dictionary<string, SequenceParticipant>();
@@ -18,14 +20,19 @@ public class SequenceDiagramParser
 
         var lines = input.Split('\n');
         var state = State.None;
-
+        var currentOptBlock = OptBlock.Empty;
         foreach (var line in lines)
         {
             if (line.Trim().StartsWith("participant"))
                 state = State.Participant;
             else if (line.Contains("-->>")) // more specific than ->>
                 state = State.MessageReply;
-            else if (line.Contains("->>")) state = State.Message;
+            else if (line.Contains("->>")) 
+                state = State.Message;
+            else if (line.Trim().StartsWith("opt "))
+                state = State.Opt;
+            else if (line.Trim().StartsWith("end"))
+                state = State.EndOpt;
 
             switch (state)
             {
@@ -60,6 +67,7 @@ public class SequenceDiagramParser
                         var to = messageMatch.Groups[2].Value;
                         var message = messageMatch.Groups[3].Value;
                         var msg = new SynchronousMessage(message, from, to);
+                        msg.OptBlock = currentOptBlock;
                         participants[from].AddCallMade(msg);
                         participants[to].AddMessage(msg);
                         messages.Add(new SequenceMessage(from, to, message));
@@ -71,6 +79,13 @@ public class SequenceDiagramParser
                     var toReply = messageReplyMatch.Groups[2].Value;
                     var messageReply = messageReplyMatch.Groups[3].Value;
                     participants[toReply].SetResponseToLastSyncMessageSent(messageReply);
+                    break;
+                case State.Opt:
+                    var condition = line.Trim().Substring(4).Trim();
+                    currentOptBlock = new OptBlock() { Condition = condition };
+                    break;
+                case State.EndOpt:
+                    currentOptBlock = OptBlock.Empty;
                     break;
                 case State.None:
                     break;
@@ -87,6 +102,15 @@ public class SequenceDiagramParser
         None,
         Participant,
         Message,
-        MessageReply
+        MessageReply,
+        Opt,
+        EndOpt
     }
+}
+
+public class OptBlock
+{
+    public string Condition { get; set; } = string.Empty;
+    public bool IsEmpty => string.IsNullOrEmpty(Condition);
+    public static OptBlock Empty = new();
 }

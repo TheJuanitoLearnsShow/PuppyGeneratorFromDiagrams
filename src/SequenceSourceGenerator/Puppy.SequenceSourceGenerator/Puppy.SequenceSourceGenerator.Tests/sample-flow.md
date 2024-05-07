@@ -13,4 +13,7 @@ sequenceDiagram
     a->>t: Get Newest Stats
     t-->>a: Newest Stats
     a-->>o: Greeting
+    opt greetingResult.IsGood
+        a-->o: Hi Again
+    end
 ```
