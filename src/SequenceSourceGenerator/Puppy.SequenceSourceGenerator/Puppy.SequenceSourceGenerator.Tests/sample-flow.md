@@ -9,11 +9,11 @@ sequenceDiagram
     api->>o: Initiate Flow
     o->>b: Hi Bob
     b-->>o: Greeting (greetingResult)
+    opt greetingResult.IsGood
+        o->>b: Hi Again
+    end
     o->>a: Hi Alice (greetingResult)
     a->>t: Get Newest Stats
     t-->>a: Newest Stats
     a-->>o: Greeting
-    opt greetingResult.IsGood
-        a-->o: Hi Again
-    end
 ```

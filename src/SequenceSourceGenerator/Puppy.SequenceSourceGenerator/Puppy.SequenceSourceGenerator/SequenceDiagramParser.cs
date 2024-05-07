@@ -24,15 +24,29 @@ public class SequenceDiagramParser
         foreach (var line in lines)
         {
             if (line.Trim().StartsWith("participant"))
+            {
                 state = State.Participant;
+            }
             else if (line.Contains("-->>")) // more specific than ->>
+            {
                 state = State.MessageReply;
-            else if (line.Contains("->>")) 
+            }
+            else if (line.Contains("->>"))
+            {
                 state = State.Message;
+            }
             else if (line.Trim().StartsWith("opt "))
+            {
                 state = State.Opt;
+            }
             else if (line.Trim().StartsWith("end"))
+            {
                 state = State.EndOpt;
+            }
+            else
+            {
+                state = State.None;
+            }
 
             switch (state)
             {

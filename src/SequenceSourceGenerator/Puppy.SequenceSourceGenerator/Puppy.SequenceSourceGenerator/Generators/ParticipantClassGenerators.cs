@@ -98,14 +98,7 @@ namespace Puppy.SequenceSourceGenerator.Generators
             var optBlockCode = string.Empty;
             if (state.CurrentOptBlock.Condition != msg.OptBlock.Condition)
             {
-                if (msg.OptBlock.IsEmpty)
-                {
-                    optBlockCode = "\n}\n";
-                }
-                else
-                {
-                    optBlockCode = $"\nif ({msg.OptBlock.Condition}) {{\n";
-                }
+                optBlockCode = msg.OptBlock.IsEmpty ? "\n}\n" : $"\nif ({msg.OptBlock.Condition}) {{\n";
                 state.CurrentOptBlock = msg.OptBlock;
             }
             var resultStorageCode = string.IsNullOrEmpty(msg.ResultAssignmentCode) ?
