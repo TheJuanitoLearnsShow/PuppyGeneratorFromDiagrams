@@ -15,5 +15,10 @@ sequenceDiagram
     o->>a: Hi Alice (greetingResult)
     a->>t: Get Newest Stats
     t-->>a: Newest Stats
-    a-->>o: Greeting
+    a-->>o: Greeting (lastGreeting)
+    alt lastGreeting.IsGood
+        o->>b: Hi one more time
+    else !lastGreeting.IsGood
+        o->>b: Ok that is fine
+    end
 ```

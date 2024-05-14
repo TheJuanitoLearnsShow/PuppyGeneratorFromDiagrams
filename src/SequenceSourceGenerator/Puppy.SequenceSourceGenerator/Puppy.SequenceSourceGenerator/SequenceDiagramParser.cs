@@ -11,7 +11,8 @@ public class SequenceDiagramParser
 
     private static Regex ParticipantRegex => new(@"participant (\w+)(?: as (\w+))?");
 
-    private static Regex AltRegex => new(@"opt ");
+    private static Regex OptRegex => new(@"opt ");
+    private static Regex AltRegex => new(@"alt ");
 
     public ParsedDiagram Parse(string input)
     {
@@ -23,23 +24,32 @@ public class SequenceDiagramParser
         var currentOptBlock = OptBlock.Empty;
         foreach (var line in lines)
         {
-            if (line.Trim().StartsWith("participant"))
+            var trimmedLine = line.Trim();
+            if (trimmedLine.StartsWith("participant"))
             {
                 state = State.Participant;
             }
-            else if (line.Contains("-->>")) // more specific than ->>
+            else if (trimmedLine.Contains("-->>")) // more specific than ->>
             {
                 state = State.MessageReply;
             }
-            else if (line.Contains("->>"))
+            else if (trimmedLine.Contains("->>"))
             {
                 state = State.Message;
             }
-            else if (line.Trim().StartsWith("opt "))
+            else if (trimmedLine.StartsWith("opt "))
             {
                 state = State.Opt;
             }
-            else if (line.Trim().StartsWith("end"))
+            else if (trimmedLine.StartsWith("alt "))
+            {
+                state = State.Alt;
+            }
+            else if (trimmedLine.StartsWith("else "))
+            {
+                state = State.Else;
+            }
+            else if (trimmedLine.StartsWith("end"))
             {
                 state = State.EndOpt;
             }
@@ -98,6 +108,14 @@ public class SequenceDiagramParser
                     var condition = line.Trim().Substring(4).Trim();
                     currentOptBlock = new OptBlock() { Condition = condition };
                     break;
+                case State.Alt:
+                    var conditionAlt = line.Trim().Substring(4).Trim();
+                    currentOptBlock = new OptBlock() { Condition = conditionAlt };
+                    break;
+                case State.Else:
+                    var conditionElse = line.Trim().Substring(5).Trim();
+                    currentOptBlock = new OptBlock() { Condition = conditionElse, IsElse = true };
+                    break;
                 case State.EndOpt:
                     currentOptBlock = OptBlock.Empty;
                     break;
@@ -118,7 +136,9 @@ public class SequenceDiagramParser
         Message,
         MessageReply,
         Opt,
-        EndOpt
+        EndOpt,
+        Alt,
+        Else
     }
 }
 
@@ -126,5 +146,8 @@ public class OptBlock
 {
     public string Condition { get; set; } = string.Empty;
     public bool IsEmpty => string.IsNullOrEmpty(Condition);
+
+    public bool IsElse { get; internal set; }
+
     public static OptBlock Empty = new();
 }
