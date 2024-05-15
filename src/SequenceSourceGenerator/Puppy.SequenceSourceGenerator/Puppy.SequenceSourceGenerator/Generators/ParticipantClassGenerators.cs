@@ -30,7 +30,7 @@ namespace Puppy.SequenceSourceGenerator.Generators
             var fieldsToCalledParticipants = orchestrator.GetParticipantsCalled().Select(pn =>
                 participants.FirstOrDefault(p => p.Alias == pn)
             ).Where(p => p != null)
-            .Select(p => $"\nprivate readonly {p.Type} {p.Alias};")
+            .Select(p => $"\nprotected readonly {p.Type} {p.Alias};")
             .ToList();
             var steps = orchestrator.GetMessagesSent()
                     .Aggregate(
@@ -172,13 +172,7 @@ public partial interface {participantInterfaceName}
                 {
                     Name = msg.MessageName,
                     ReturnType = msg.ResponseType,
-                    MethodParams =
-                    [
-                        new ParamToGenerate()
-                        {
-                            Type = $"{msg.MessageName}Request", Name = "request"
-                        }
-                    ]
+                    MethodParams = []
                 };
             }
 

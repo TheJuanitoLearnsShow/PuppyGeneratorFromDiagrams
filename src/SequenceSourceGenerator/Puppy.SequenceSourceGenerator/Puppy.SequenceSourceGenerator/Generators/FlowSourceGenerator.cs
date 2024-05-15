@@ -114,11 +114,11 @@ public class FlowSourceGenerator: IIncrementalGenerator
             .FirstOrDefault(a => a.AttributeClass?.Name.ToString() == attributeName)
             ?.NamedArguments.FirstOrDefault(a => a.Key == "FlowName")
             .Value.Value?.ToString() ?? "Flow";
-        var enumInfo = new FlowClassInfo(type, flowFilePath, flowName);
+        var classInfo = new FlowClassInfo(type, flowFilePath, flowName);
         //
         // if (_logger.IsEnabled(LogLevel.Debug))
         //     _logger.Log(LogLevel.Debug, $"Smart Enum found: {enumInfo.Namespace}.{enumInfo.Name}");
 
-        return enumInfo;
+        return classInfo;
     }
 }

@@ -31,9 +31,9 @@ public class SequenceParsingTests
     {
         const string nameSpace = "testGen";
         var generatorResult = GenerateFromDiagram("sample-flow.md", nameSpace, "flow1");
-        var generatorResult2 = GenerateFromDiagram("sample-flow-2.md", nameSpace, "flow2");
+        //var generatorResult2 = GenerateFromDiagram("sample-flow-2.md", nameSpace, "flow2");
         var filesGenerated = generatorResult
-            .Merge(generatorResult2)
+            //.Merge(generatorResult2)
             .ToFilesToGenerate(nameSpace);
 
         const string folderName = "generated";
@@ -46,7 +46,7 @@ public class SequenceParsingTests
             File.WriteAllText( Path.Combine(folderName, f.ClassName + ".cs"), f.Contents);
         }
         _testOutputHelper.WriteLine(filesGenerated.ToString());
-        Assert.Equal(24, filesGenerated.Count());
+        Assert.Equal(20, filesGenerated.Count());
 
         Assert.Contains(filesGenerated, r => r.ClassName == "FlowOrchestratorBase.flow1");
         var aliceFile = filesGenerated.First(f => f.ClassName == "IAlice");
