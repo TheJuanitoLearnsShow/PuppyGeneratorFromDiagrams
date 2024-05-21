@@ -26,12 +26,28 @@ namespace Puppy.SequenceSourceGenerator.Generators
                 .FirstOrDefault(p =>
                     p.Type.Equals("IOrchestrator", StringComparison.InvariantCultureIgnoreCase));
             if (orchestrator == null) return (string.Empty, string.Empty);
-            var participantInterfaceName = orchestrator.ParticipantName.ToPascalCase() + "Base";
+            var participantNamePascal = orchestrator.ParticipantName.ToPascalCase();
+            var participantInterfaceName = participantNamePascal + "Base";
             var fieldsToCalledParticipants = orchestrator.GetParticipantsCalled().Select(pn =>
                 participants.FirstOrDefault(p => p.Alias == pn)
-            ).Where(p => p != null)
+            ).Where(p => p != null).ToList();
+            var fieldsDeclarationCode = string.Join("\n",
+                fieldsToCalledParticipants
             .Select(p => $"\nprotected readonly {p.Type} {p.Alias};")
-            .ToList();
+            .ToList()
+                );
+            var fieldsAsConstructorParams = string.Join(",",
+                fieldsToCalledParticipants
+                    .Select(p => $"{p.Type} {p.Alias}")
+                    .ToList()
+            );
+            var fieldsAsConstructorAssignments = string.Join("\n",
+                fieldsToCalledParticipants
+                    .Select(p => $"this.{p.Alias} = {p.Alias};")
+                    .ToList()
+            );
+            //FlowStateGenerator
+            var flowStateClassName = participantNamePascal + "StateBase";
             var steps = orchestrator.GetMessagesSent()
                     .Aggregate(
                         new StepsCalledState(),
@@ -41,17 +57,30 @@ namespace Puppy.SequenceSourceGenerator.Generators
                 string.Join("\n", steps.CallingCode) + (steps.CurrentOptBlock.IsEmpty ? string.Empty : "\n}\n");
             var stepMethods =
                 string.Join("\n", steps.Methods.Select(m => m.ToOverridableCode()));
+            var flowStateClassGenerator = new FlowStateGenerator(flowStateClassName, steps.Methods.Select(m => 
+                new PropertyToGenerate() { 
+                    Name = $"{m.Name}Result",
+                    Type = $"{m.ReturnType}"
+                }
+                ).ToList());
             var mainClass = $"""
                                  namespace {_nameSpace};
                                  using System.Collections.Generic;
 
+                                 {flowStateClassGenerator.ToCode()}
+
                                  public partial class {participantInterfaceName}
                                  """
                                 + "\n{\n" 
-                                + string.Join("\n", fieldsToCalledParticipants)
-                                + $"\npublic async Task Execute{flowName}()" 
+                                + $"public {participantInterfaceName}({fieldsAsConstructorParams})"
+                                + "\n{\n" 
+                                + fieldsAsConstructorAssignments
+                                + "\n}\n"
+                                + fieldsDeclarationCode
+                                + $"\npublic async Task<{flowStateClassName}> Execute{flowName}({flowStateClassName} state)" 
                                 + " {\n"
                                 + callingCode
+                                + "\nreturn state;"
                                 + "\n}\n"
                                 + stepMethods
                                 + "\n}\n";
@@ -75,7 +104,7 @@ namespace Puppy.SequenceSourceGenerator.Generators
 
             var methodForStep = new MethodToGenerate()
             {
-                Name = $"{flowName}Step{stepNum}",
+                Name = $"{flowName}Step{stepNum}{msg.MessageName}".ToPascalCase(),
                 ReturnType = msg.ResponseType,
                 MethodParams = methodParams,
                 MethodBody = callingMethodCode
@@ -83,7 +112,6 @@ namespace Puppy.SequenceSourceGenerator.Generators
             var resultInfo = string.IsNullOrEmpty(msg.ResultAssignmentCode)
                 ? new ParamToGenerate() { Name = $"step{stepNum}", Type = msg.ResponseType }
                 : new ParamToGenerate() { Name = $"{msg.ResultAssignmentCode}", Type = msg.ResponseType };
-                // : $"\nvar {msg.ResultAssignmentCode} = ";
             state.Methods.Add(methodForStep);
             state.ResponsesSoFar.Add(resultInfo);
             state.CallingCode.Add(GenerateStepCallingCode(msg, stepNum, methodForStep.Name, state));
@@ -107,13 +135,13 @@ namespace Puppy.SequenceSourceGenerator.Generators
                 }
                 state.CurrentOptBlock = msg.OptBlock;
             }
-            var resultStorageCode = string.IsNullOrEmpty(msg.ResultAssignmentCode) ?
-                $"\n    var step{stepNum} = "
-                : $"\n    var {msg.ResultAssignmentCode} = ";
             var callingMethodCode = string.IsNullOrEmpty(msg.ParametersCode)
                 ? $"await {stepMethodName}();"
                 : $"await {stepMethodName}({msg.ParametersCode});";
-            return optBlockCode + resultStorageCode + callingMethodCode;
+            var resultStorageCode = string.IsNullOrEmpty(msg.ResultAssignmentCode) ?
+                $"\n    var step{stepNum} = {callingMethodCode}\n    state.{stepMethodName}Result = step{stepNum};"
+                : $"\n    var {msg.ResultAssignmentCode} = {callingMethodCode}\n    state.{stepMethodName}Result = {msg.ResultAssignmentCode};";
+            return optBlockCode + resultStorageCode;
         }
 
         private ParamToGenerate MapToParamToGenerate(string pName, List<ParamToGenerate> stateResponsesSoFar)

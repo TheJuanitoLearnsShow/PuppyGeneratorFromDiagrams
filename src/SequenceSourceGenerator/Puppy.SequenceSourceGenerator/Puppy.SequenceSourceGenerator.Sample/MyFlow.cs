@@ -6,14 +6,12 @@ namespace Puppy.SequenceSourceGenerator.Sample;
 public partial class MyFlow : FlowOrchestratorBase
 {
 
-    public MyFlow(IAlice a, IBOb b)
+    public MyFlow(IAlice a, IBOb b) : base(b,a)
     {
-        this.a = a;
-        this.b = b;
     }
 
-    public Task StartFlow1()
+    public Task<FlowOrchestratorStateBase> StartFlow1()
     {
-        return ExecuteFlow1();
+        return ExecuteFlow1(new FlowOrchestratorStateBase());
     }
 }
