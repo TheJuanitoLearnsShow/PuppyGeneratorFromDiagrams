@@ -1,10 +1,6 @@
 ﻿namespace Puppy.SequenceSourceGenerator.Sample;
 
-public partial class HiBobResponse
+public partial class HiBobGreatSeeingYouResponse 
 {
     public bool IsGood => true;
-}
-
-public partial class OkThatIsFineResponse 
-{
 }

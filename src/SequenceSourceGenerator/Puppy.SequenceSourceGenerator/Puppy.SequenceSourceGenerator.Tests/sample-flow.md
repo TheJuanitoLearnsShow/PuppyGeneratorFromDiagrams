@@ -7,7 +7,7 @@ sequenceDiagram
     participant b as Bob: IB ob
     participant t as Third Party Service: IStats
     api->>o: Initiate Flow
-    o->>b: Hi Bob
+    o->>b: Hi Bob. Great seeing you (initiatorPayload)
     b-->>o: Greeting (greetingResult)
     opt greetingResult.IsGood
         o->>b: Hi Again

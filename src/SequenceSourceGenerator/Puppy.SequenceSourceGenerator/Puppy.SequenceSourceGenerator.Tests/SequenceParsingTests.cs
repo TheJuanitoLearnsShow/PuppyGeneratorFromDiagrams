@@ -45,7 +45,11 @@ public class SequenceParsingTests
         {
             File.WriteAllText( Path.Combine(folderName, f.ClassName + ".cs"), f.Contents);
         }
-        _testOutputHelper.WriteLine(filesGenerated.ToString());
+
+        foreach (var fileGenerated in filesGenerated)
+        {
+            _testOutputHelper.WriteLine(fileGenerated.ToString());
+        }
         Assert.Equal(20, filesGenerated.Count());
 
         Assert.Contains(filesGenerated, r => r.ClassName == "FlowOrchestratorBase.flow1");

@@ -12,6 +12,11 @@ namespace CaseExtensions
             return source.Replace("\n", "<br/>\n/// ");
         }
 
+        public static string ToPascalCaseNoPunctuation(this string source)
+        {
+            return source.ToPascalCase().Replace(".", "");
+        }
+
         public static string ToCamelCase(this string source)
         {
             if (source == null)

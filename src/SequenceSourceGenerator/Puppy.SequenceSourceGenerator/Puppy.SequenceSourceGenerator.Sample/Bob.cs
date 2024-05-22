@@ -2,16 +2,16 @@
 
 public partial class Bob : IBOb
 {
+    public Task<HiBobGreatSeeingYouResponse> HiBobGreatSeeingYou(object initiatorPayload)
+    {
+        Console.WriteLine(nameof(HiBobGreatSeeingYou));
+        return Task.FromResult(new HiBobGreatSeeingYouResponse());
+    }
+
     public Task<HiAgainResponse> HiAgain()
     {
         Console.WriteLine(nameof(HiAgain));
         return Task.FromResult(new HiAgainResponse());
-    }
-
-    public Task<HiBobResponse> HiBob()
-    {
-        Console.WriteLine(nameof(HiBob));
-        return Task.FromResult(new HiBobResponse());
     }
 
     public Task<HiOneMoreTimeResponse> HiOneMoreTime()

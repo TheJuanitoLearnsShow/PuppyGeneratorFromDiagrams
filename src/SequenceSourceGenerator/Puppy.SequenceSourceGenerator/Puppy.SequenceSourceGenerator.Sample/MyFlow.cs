@@ -12,6 +12,6 @@ public partial class MyFlow : FlowOrchestratorBase
 
     public Task<FlowOrchestratorStateBase> StartFlow1()
     {
-        return ExecuteFlow1(new FlowOrchestratorStateBase());
+        return ExecuteFlow1(new FlowOrchestratorStateBase(), new HiBobGreatSeeingYouRequest());
     }
 }

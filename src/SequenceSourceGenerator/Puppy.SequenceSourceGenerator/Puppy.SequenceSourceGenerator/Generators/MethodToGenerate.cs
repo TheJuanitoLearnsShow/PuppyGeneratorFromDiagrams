@@ -1,9 +1,18 @@
-﻿namespace Puppy.SequenceSourceGenerator.Generators;
+﻿using CaseExtensions;
+
+namespace Puppy.SequenceSourceGenerator.Generators;
 
 public class MethodToGenerate : IEquatable<MethodToGenerate>
 {
+    private string _name = string.Empty;
     public string ReturnType { get; set; } = "object";
-    public string Name { get; set; } = string.Empty;
+
+    public string Name
+    {
+        get => _name;
+        set => _name = value.ToPascalCase();
+    }
+
     public List<ParamToGenerate> MethodParams { get; set; } = [];
 
     public string MethodBody { get; set; } = string.Empty;
@@ -54,14 +63,19 @@ public class MethodToGenerate : IEquatable<MethodToGenerate>
 
     public string ToCode()
     {
-        var paramCode = string.Join(", ", MethodParams.Select(p => p.ToCode()));
+        var paramCode = GetParametersCode();
         return $"Task<{ReturnType}> {Name}({paramCode});";
     }
     public string ToOverridableCode()
     {
-        var paramCode = string.Join(", ", MethodParams.Select(p => p.ToCode()));
+        var paramCode = GetParametersCode();
         return $"public virtual Task<{ReturnType}> {Name}({paramCode}) {{\n    " +
                MethodBody
                + "\n}";
+    }
+
+    public string GetParametersCode()
+    {
+        return string.Join(", ", MethodParams.Select(p => p.ToCode())).Trim();
     }
 }

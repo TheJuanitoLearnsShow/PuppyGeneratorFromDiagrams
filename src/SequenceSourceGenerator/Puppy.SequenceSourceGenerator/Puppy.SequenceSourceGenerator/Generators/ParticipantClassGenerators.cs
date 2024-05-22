@@ -63,28 +63,45 @@ namespace Puppy.SequenceSourceGenerator.Generators
                     Type = $"{m.ReturnType}"
                 }
                 ).ToList());
+            var flowParametersCode = BuildFlowParametersCode(steps, flowStateClassName);
             var mainClass = $"""
-                                 namespace {_nameSpace};
-                                 using System.Collections.Generic;
+                             namespace {_nameSpace};
+                             using System.Collections.Generic;
 
-                                 {flowStateClassGenerator.ToCode()}
+                             {flowStateClassGenerator.ToCode()}
 
-                                 public partial class {participantInterfaceName}
-                                 """
-                                + "\n{\n" 
-                                + $"public {participantInterfaceName}({fieldsAsConstructorParams})"
-                                + "\n{\n" 
-                                + fieldsAsConstructorAssignments
-                                + "\n}\n"
-                                + fieldsDeclarationCode
-                                + $"\npublic async Task<{flowStateClassName}> Execute{flowName}({flowStateClassName} state)" 
-                                + " {\n"
-                                + callingCode
-                                + "\nreturn state;"
-                                + "\n}\n"
-                                + stepMethods
-                                + "\n}\n";
+                             public partial class {participantInterfaceName}
+                             """
+                            + "\n{\n" 
+                            + $"public {participantInterfaceName}({fieldsAsConstructorParams})"
+                            + "\n{\n" 
+                            + fieldsAsConstructorAssignments
+                            + "\n}\n"
+                            + fieldsDeclarationCode
+                            + $"\npublic async Task<{flowStateClassName}> Execute{flowName}({flowParametersCode})" 
+                            + " {\n"
+                            + callingCode
+                            + "\nreturn state;"
+                            + "\n}\n"
+                            + stepMethods
+                            + "\n}\n";
             return (participantInterfaceName + '.' + flowName, mainClass);
+        }
+
+        /// <summary>
+        /// If the first method called by the flow requires a parameter, then the flow itself needs to take
+        /// that parameter as a parameter in addition to the state object.
+        /// </summary>
+        /// <param name="steps"></param>
+        /// <param name="flowStateClassName"></param>
+        /// <returns></returns>
+        private static string BuildFlowParametersCode(StepsCalledState steps, string flowStateClassName)
+        {
+            var firstMessageParametersCode = steps.Methods.FirstOrDefault()?.GetParametersCode() ;
+            var flowParametersCode = string.IsNullOrEmpty(firstMessageParametersCode)
+                ? $"{flowStateClassName} state"
+                : $"{flowStateClassName} state, {firstMessageParametersCode}";
+            return flowParametersCode;
         }
 
         private StepsCalledState GenerateStepCode(SynchronousMessage msg, 
@@ -96,7 +113,7 @@ namespace Puppy.SequenceSourceGenerator.Generators
                 string.IsNullOrEmpty(msg.ParametersCode)
                     ? []
                     : msg.ParametersCode.Split(',').Select(
-                        pName => MapToParamToGenerate(pName, state.ResponsesSoFar))
+                        pName => MapToParamToGenerate(pName, state.ResponsesSoFar, msg))
                         .ToList();
             var callingMethodCode = string.IsNullOrEmpty(msg.ParametersCode)
                 ? $"return {msg.To}.{msg.MessageName}();"
@@ -144,10 +161,13 @@ namespace Puppy.SequenceSourceGenerator.Generators
             return optBlockCode + resultStorageCode;
         }
 
-        private ParamToGenerate MapToParamToGenerate(string pName, List<ParamToGenerate> stateResponsesSoFar)
+        private ParamToGenerate MapToParamToGenerate(string pName, List<ParamToGenerate> stateResponsesSoFar,
+            SynchronousMessage msg)
         {
             var resultFromPrevStep = stateResponsesSoFar.FirstOrDefault(r => r.Name == pName);
-            return resultFromPrevStep;
+            return resultFromPrevStep.Name == null ? 
+                new ParamToGenerate() { Name = pName, Type = msg.RequestType} 
+                : resultFromPrevStep;
         }
 
         private IEnumerable<(string ClassName, string Contents)> GenerateCodeForParticipantOld(

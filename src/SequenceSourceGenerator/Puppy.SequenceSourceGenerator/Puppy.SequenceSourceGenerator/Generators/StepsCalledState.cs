@@ -5,6 +5,7 @@ public class StepsCalledState()
     public int StepIdx { get; set; } = 0;
     public List<ParamToGenerate> ResponsesSoFar { get; } = new();
     public List<MethodToGenerate> Methods { get; } = new();
+    public bool IsFirstStep => StepIdx == 0;
     public List<string> CallingCode { get; } = new();
     public OptBlock CurrentOptBlock { get; set; } = new();
 

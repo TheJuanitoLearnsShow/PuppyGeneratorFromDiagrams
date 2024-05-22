@@ -14,8 +14,8 @@ namespace Puppy.SequenceSourceGenerator
         public string ResponseName { set; get; }
         public string ParametersCode { private set; get; }
         public string ResultAssignmentCode { private set; get; }
-        public string RequestType => MessageName + "Request";
-        public string ResponseType => ResponseName + "Response";
+        public string RequestType => MessageName.ToPascalCaseNoPunctuation() + "Request";
+        public string ResponseType => ResponseName.ToPascalCaseNoPunctuation() + "Response";
         public OptBlock OptBlock { get; set; } = new();
 
         public SynchronousMessage(string messageName, string from, string to)
@@ -27,12 +27,12 @@ namespace Puppy.SequenceSourceGenerator
             {
                 var paramsPart = messageName.Substring(lastParenthesis + 1).Trim().TrimEnd(')');
                 ParametersCode = paramsPart;
-                MessageName = messageName.Substring(0, lastParenthesis).Trim().ToPascalCase();
+                MessageName = messageName.Substring(0, lastParenthesis).Trim().ToPascalCaseNoPunctuation();
             }
             else
             {
                 ParametersCode = string.Empty;
-                MessageName = messageName.Trim().ToPascalCase();
+                MessageName = messageName.Trim().ToPascalCaseNoPunctuation();
             }
             ResponseName = MessageName;
             ResultAssignmentCode = string.Empty;
