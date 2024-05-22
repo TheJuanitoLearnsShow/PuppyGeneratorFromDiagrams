@@ -21,8 +21,8 @@ public class SequenceParsingTests
             .TakeWhile(l => !l.StartsWith("```"));
         var parser = new SequenceDiagramParser();
         var result = parser.Parse(string.Join(Environment.NewLine, mermaidDiagram));
-        Assert.Equal(2, result.Participants.Count);
-        Assert.Equal("IAlice", result.Participants.First().Value.Type);
+        Assert.Equal(5, result.Participants.Count);
+        Assert.Equal("IExternalCaller", result.Participants.First().Value.Type);
         Assert.NotEmpty(result.Messages);
     }
 
@@ -68,7 +68,7 @@ public class SequenceParsingTests
         var parser = new SequenceDiagramParser();
         var result = parser.Parse(string.Join(Environment.NewLine, mermaidDiagram));
 
-        var generator = new ParticipantClassGenerators(nameSpace);
+        var generator = new ClassGenerators(nameSpace);
         var generatorResult = new GeneratorResult(result, generator, flowName);
         return generatorResult;
     }

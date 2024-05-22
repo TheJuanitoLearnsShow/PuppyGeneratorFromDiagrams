@@ -13,6 +13,10 @@ namespace Puppy.SequenceSourceGenerator
         public string MessageName { get; }
         public string ResponseName { set; get; }
         public string ParametersCode { private set; get; }
+
+        public string[] ParameterNames => string.IsNullOrEmpty(ParametersCode)
+            ? []
+            : ParametersCode.Split(',').Select(p => p.Trim()).ToArray();
         public string ResultAssignmentCode { private set; get; }
         public string RequestType => MessageName.ToPascalCaseNoPunctuation() + "Request";
         public string ResponseType => ResponseName.ToPascalCaseNoPunctuation() + "Response";

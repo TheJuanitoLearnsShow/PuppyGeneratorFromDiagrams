@@ -34,21 +34,18 @@ public class SequenceParticipant(string participantName, string alias, string ty
     public IReadOnlyList<string> GetParticipantsCalled() => 
         _messagesSent.Select(m => m.To).Distinct().ToImmutableList();
 
-    public string GetVarDeclarationForOld(string varName)
-    {
-        var msgThatGeneratedVar = 
-            _messagesSent
-                .FirstOrDefault(m => m.ResultAssignmentCode == varName)
-                ?.ResponseType ?? "object";
-        return $"{msgThatGeneratedVar} {varName}";
-    }
     internal ParamToGenerate GetVarDeclarationFor(string varName)
     {
-        var msgThatGeneratedVar = 
+        var varType = 
             _messagesSent
                 .FirstOrDefault(m => m.ResultAssignmentCode == varName)
-                ?.ResponseType ?? "object";
-        return new ParamToGenerate() { Name = varName, Type = msgThatGeneratedVar };
+                ?.ResponseType;
+        if (varType != null) return new ParamToGenerate() { Name = varName, Type = varType };
+        var typeOfFirstUseAsParam = 
+            _messagesSent
+                .FirstOrDefault(m => m.ParameterNames.Contains(varName))
+                ?.RequestType ?? "object";
+        return new ParamToGenerate() { Name = varName, Type = typeOfFirstUseAsParam };
     }
     
     public void Deconstruct(out string ParticipantName, out string Alias, out string Type)

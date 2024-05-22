@@ -2,7 +2,7 @@
 
 public partial class Bob : IBOb
 {
-    public Task<HiBobGreatSeeingYouResponse> HiBobGreatSeeingYou(object initiatorPayload)
+    public Task<HiBobGreatSeeingYouResponse> HiBobGreatSeeingYou(HiBobGreatSeeingYouRequest initiatorPayload)
     {
         Console.WriteLine(nameof(HiBobGreatSeeingYou));
         return Task.FromResult(new HiBobGreatSeeingYouResponse());

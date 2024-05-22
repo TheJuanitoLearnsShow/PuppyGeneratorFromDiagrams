@@ -13,7 +13,7 @@ public class GeneratorResult
     {
             
     }
-    public GeneratorResult(ParsedDiagram parsedDiagram, ParticipantClassGenerators generator, string flowName)
+    public GeneratorResult(ParsedDiagram parsedDiagram, ClassGenerators generator, string flowName)
     {
         Participants = generator.GenerateCodeForInterfaces(parsedDiagram).ToImmutableDictionary(
             v => v.ClassName, v => v.Contents);

@@ -12,7 +12,7 @@ sequenceDiagram
     opt greetingResult.IsGood
         o->>b: Hi Again
     end
-    o->>a: Hi Alice (greetingResult)
+    o->>a: Hi Alice (initiatorPayload, greetingResult)
     a->>t: Get Newest Stats
     t-->>a: Newest Stats
     a-->>o: Greeting (lastGreeting)

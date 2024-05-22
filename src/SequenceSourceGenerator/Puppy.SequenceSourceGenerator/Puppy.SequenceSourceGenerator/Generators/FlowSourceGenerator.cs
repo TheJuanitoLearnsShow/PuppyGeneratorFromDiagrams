@@ -91,18 +91,14 @@ public class FlowSourceGenerator: IIncrementalGenerator
         var parser = new SequenceDiagramParser();
         var result = parser.Parse(string.Join("\n", mermaidDiagram));
 
-        var generator = new ParticipantClassGenerators(nameSpace);
+        var generator = new ClassGenerators(nameSpace);
         var generatorResult = new GeneratorResult(result, generator, flowName)
         {
             NameSpace = nameSpace
         };
         return generatorResult;
     }
-    private string GenerateCodeBasedOnAdditionalFile(FlowClassInfo classDeclaration, string fileContent)
-    {
-        // Implement your logic to generate code based on the content of the additional file
-        return $"// Generated code based on the additional file content {classDeclaration.Namespace} {classDeclaration.FilePath}";
-    }
+    
     private FlowClassInfo GetFlowClassInfo(GeneratorAttributeSyntaxContext context, CancellationToken cancellationToken)
     {
         var type = (INamedTypeSymbol)context.TargetSymbol;
@@ -115,9 +111,6 @@ public class FlowSourceGenerator: IIncrementalGenerator
             ?.NamedArguments.FirstOrDefault(a => a.Key == "FlowName")
             .Value.Value?.ToString() ?? "Flow";
         var classInfo = new FlowClassInfo(type, flowFilePath, flowName);
-        //
-        // if (_logger.IsEnabled(LogLevel.Debug))
-        //     _logger.Log(LogLevel.Debug, $"Smart Enum found: {enumInfo.Namespace}.{enumInfo.Name}");
 
         return classInfo;
     }
