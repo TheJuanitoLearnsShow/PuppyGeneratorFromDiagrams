@@ -60,7 +60,7 @@ public class OrchestratorClassGenerator
         var flowStateClassGenerator = new FlowStateGenerator(flowStateClassName, steps.Methods.Select(m => 
             new PropertyToGenerate() { 
                 Name = $"{m.Name}Result",
-                Type = $"{m.ReturnType}"
+                Type = $"{m.ReturnType}?"
             }
         ).ToList());
         var flowParametersCode = BuildFlowParametersCode(steps, flowStateClassName);
