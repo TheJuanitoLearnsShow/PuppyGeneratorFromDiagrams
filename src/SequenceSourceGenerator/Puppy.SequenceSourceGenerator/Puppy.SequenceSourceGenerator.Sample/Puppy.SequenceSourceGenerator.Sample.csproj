@@ -17,6 +17,9 @@
       <AdditionalFiles Include="..\Puppy.SequenceSourceGenerator.Tests\sample-flow.md">
         <Link>sample-flow.md</Link>
       </AdditionalFiles>
+        <AdditionalFiles Include="..\Puppy.SequenceSourceGenerator.Tests\sample-flow-2.md">
+            <Link>sample-flow-2.md</Link>
+        </AdditionalFiles>
     </ItemGroup>
 
 </Project>

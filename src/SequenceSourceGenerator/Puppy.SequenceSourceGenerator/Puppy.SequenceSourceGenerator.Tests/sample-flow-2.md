@@ -2,7 +2,7 @@
 ```mermaid
 sequenceDiagram
     participant api as External Caller:IExternalCaller
-    participant o as Flow Orchestrator:IOrchestrator
+    participant o as Other Flow Orchestrator:IOrchestrator
     participant a as Alice the great:IAlice
     participant b as Bob: IB ob
     api->>o: Initiate Flow

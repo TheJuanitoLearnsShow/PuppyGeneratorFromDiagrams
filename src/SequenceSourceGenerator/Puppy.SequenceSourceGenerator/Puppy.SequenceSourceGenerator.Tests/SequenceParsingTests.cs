@@ -31,9 +31,9 @@ public class SequenceParsingTests
     {
         const string nameSpace = "testGen";
         var generatorResult = GenerateFromDiagram("sample-flow.md", nameSpace, "flow1");
-        //var generatorResult2 = GenerateFromDiagram("sample-flow-2.md", nameSpace, "flow2");
+        var generatorResult2 = GenerateFromDiagram("sample-flow-2.md", nameSpace, "flow2");
         var filesGenerated = generatorResult
-            //.Merge(generatorResult2)
+            .Merge(generatorResult2)
             .ToFilesToGenerate(nameSpace);
 
         const string folderName = "generated";

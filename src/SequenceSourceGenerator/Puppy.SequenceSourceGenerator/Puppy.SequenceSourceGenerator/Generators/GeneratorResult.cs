@@ -50,9 +50,9 @@ public class GeneratorResult
     public ImmutableList<(string ClassName, string Contents)> ToFilesToGenerate(string nameSpace)
     {
         var fileToGenerate = Participants.Select(kv =>
-            (kv.Key, GenerateCodeForParticipant(nameSpace, kv.Value))
+            ($"{nameSpace}.{kv.Key}" , GenerateCodeForParticipant(nameSpace, kv.Value))
         ).ToList();
-        fileToGenerate.AddRange(PayloadClasses.Select(kv => (kv.Key, kv.Value)));
+        fileToGenerate.AddRange(PayloadClasses.Select(kv => ($"{nameSpace}.{kv.Key}", kv.Value)));
         fileToGenerate.AddRange(Orchestrators);
         return fileToGenerate.ToImmutableList();
     }

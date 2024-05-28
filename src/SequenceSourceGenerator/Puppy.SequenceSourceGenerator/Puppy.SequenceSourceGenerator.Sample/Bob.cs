@@ -25,4 +25,9 @@ public partial class Bob : IBOb
         Console.WriteLine(nameof(OkThatIsFine));
         return Task.FromResult(new OkThatIsFineResponse());
     }
+
+    public Task<HiBobResponse> HiBob()
+    {
+        throw new NotImplementedException();
+    }
 }

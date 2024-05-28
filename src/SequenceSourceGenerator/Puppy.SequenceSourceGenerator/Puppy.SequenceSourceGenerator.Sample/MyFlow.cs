@@ -15,3 +15,8 @@ public partial class MyFlow : FlowOrchestratorBase
         return ExecuteFlow1(new FlowOrchestratorStateBase(), new HiBobGreatSeeingYouRequest());
     }
 }
+
+[FlowDefinition(DefinitionFilePath = "sample-flow-2.md", FlowName = "Flow2") ]
+public partial class MyFlow2
+{
+}
