@@ -4,10 +4,11 @@ namespace Puppy.SequenceSourceGenerator.Generators;
 
 public class GeneratorResult
 {
+    public string FlowName { get; private set; }
     public string NameSpace { get; set; }
     public ImmutableDictionary<string, InterfaceToGenerate> Participants { get; private set; }
     public ImmutableDictionary<string, string> PayloadClasses { get; private set; }
-    public ImmutableList<(string, string)> Orchestrators { get; private set; }
+    public ImmutableList<(string, string, string)> Orchestrators { get; private set; }
 
     private GeneratorResult()
     {
@@ -15,13 +16,14 @@ public class GeneratorResult
     }
     public GeneratorResult(ParsedDiagram parsedDiagram, ClassGenerators generator, string flowName)
     {
+        FlowName = flowName;
         Participants = generator.GenerateCodeForInterfaces(parsedDiagram).ToImmutableDictionary(
             v => v.ClassName, v => v.Contents);
         PayloadClasses = generator.GenerateCodeForPayloads(parsedDiagram).ToImmutableDictionary(
             v => v.InterfaceName, v => v.Contents);
         var orchestrator = generator.GenerateCodeForOrchestrator(parsedDiagram, flowName);
         Orchestrators = new [] {
-            orchestrator
+            (flowName, orchestrator.ClassName, orchestrator.Contents)
         }.ToImmutableList();
     }
 
@@ -47,12 +49,12 @@ public class GeneratorResult
         };
     }
     
-    public ImmutableList<(string ClassName, string Contents)> ToFilesToGenerate(string nameSpace)
+    public ImmutableList<(string FlowName, string ClassName, string Contents)> ToFilesToGenerate(string nameSpace)
     {
         var fileToGenerate = Participants.Select(kv =>
-            ($"{nameSpace}.{kv.Key}" , GenerateCodeForParticipant(nameSpace, kv.Value))
+            (FlowName, $"{nameSpace}.{kv.Key}" , GenerateCodeForParticipant(nameSpace, kv.Value))
         ).ToList();
-        fileToGenerate.AddRange(PayloadClasses.Select(kv => ($"{nameSpace}.{kv.Key}", kv.Value)));
+        fileToGenerate.AddRange(PayloadClasses.Select(kv => (FlowName,$"{nameSpace}.{kv.Key}", kv.Value)));
         fileToGenerate.AddRange(Orchestrators);
         return fileToGenerate.ToImmutableList();
     }

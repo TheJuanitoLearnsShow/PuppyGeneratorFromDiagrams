@@ -56,7 +56,7 @@ public class FlowSourceGenerator: IIncrementalGenerator
                 .ToList();
             foreach (var fileToGenerate in resultsByNamespace)
             {
-                spc.AddSource($"Flow_{fileToGenerate.ClassName}_{Guid.NewGuid()}.cs", 
+                spc.AddSource($"{fileToGenerate.FlowName}_{fileToGenerate.ClassName}.cs", 
                     SourceText.From(fileToGenerate.Contents, Encoding.UTF8));
             }
         });

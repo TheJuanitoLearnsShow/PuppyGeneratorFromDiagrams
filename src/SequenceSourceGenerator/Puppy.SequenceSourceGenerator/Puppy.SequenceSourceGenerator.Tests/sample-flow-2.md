@@ -5,7 +5,7 @@ sequenceDiagram
     participant o as Other Flow Orchestrator:IOrchestrator
     participant a as Alice the great:IAlice
     participant b as Bob: IB ob
-    api->>o: Initiate Flow
+    api->>o: Initiate Flow 2
     o->>b: Hi Bob
     b-->>o: Greeting (greetingResult)
     o->>a: Hi Alice (greetingResult)
